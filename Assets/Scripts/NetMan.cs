@@ -4,24 +4,47 @@ using UnityEngine;
 using Mirror;
 public class NetMan : NetworkManager
 {
+    #region
+    private static NetMan _instance;
+
+    public static NetMan Instance
+    {
+        get
+        {
+            return _instance;
+        }
+    }
+    #endregion
+
+
+
     private bool _playerSpawned;
     private bool _playerConnected;
+    private string _playerName;
+    private Player _playerObj;
 
-    public void ActivatePlayerSpawn()
+
+    public override void Awake()
     {
-        Vector3 pos = Input.mousePosition;
-        pos.z = 10f;
-        pos = Camera.main.ScreenToWorldPoint(pos);
+        _instance = this;
+    }
 
-        PosMessage m = new PosMessage() { vector2 = pos };
-        NetworkClient.Send(m);
-        _playerSpawned = true;
+    public void SetPlayer(Player pl1)
+    {
+        _playerObj = pl1;
+        SetNamePlayer();
+    }
+
+    public void SetNamePlayer()
+    {
+        _playerObj.NewName();
     }
 
     public override void OnClientConnect()
     {
-        base.OnClientConnect();
+        //base.OnClientConnect();
         _playerConnected = true;
+        UIManager.Instance.SpawnGroupToogle();
     }
     public override void OnStartServer()
     {
@@ -38,11 +61,31 @@ public class NetMan : NetworkManager
     public override void Update()
     {
         base.Update();
-        if(Input.GetKeyDown(KeyCode.Mouse0)&&!_playerSpawned && _playerConnected)
-        {
-            ActivatePlayerSpawn();
-        }
+        //if(Input.GetKeyDown(KeyCode.Mouse0)&&!_playerSpawned && _playerConnected)
+        //{
+        //    ActivatePlayerSpawn();
+        //}
     }
+
+    public void SpawnPlayer()
+    {
+        _playerName = PlayerManager.Instance.PlayerName;
+        UIManager.Instance.ChangePlayerText(_playerName);
+        //if (string.IsNullOrWhiteSpace(_playerName)) return;
+        if (!clientLoadedScene)
+        {
+            // Ready/AddPlayer is usually triggered by a scene load completing.
+            // if no scene was loaded, then Ready/AddPlayer it here instead.
+            if (!NetworkClient.ready)
+                NetworkClient.Ready();
+
+            if (autoCreatePlayer)
+                NetworkClient.AddPlayer();
+        }
+        _playerSpawned = true;
+        UIManager.Instance.SpawnGroupToogle();
+    }
+
 }
 
 public struct PosMessage : NetworkMessage

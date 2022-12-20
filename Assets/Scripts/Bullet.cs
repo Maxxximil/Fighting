@@ -27,7 +27,7 @@ public class Bullet : NetworkBehaviour
 
             foreach(var item in Physics2D.OverlapCircleAll(transform.position, 0.5f))
             {
-                PlatformerPLayer player = item.GetComponent<PlatformerPLayer>();
+                Player player = item.GetComponent<Player>();
                 if (player)
                 {
                     if(player.netId != owner)
