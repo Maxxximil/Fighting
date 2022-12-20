@@ -71,7 +71,7 @@ public class NetMan : NetworkManager
     {
         _playerName = PlayerManager.Instance.PlayerName;
         UIManager.Instance.ChangePlayerText(_playerName);
-        //if (string.IsNullOrWhiteSpace(_playerName)) return;
+        if (string.IsNullOrWhiteSpace(_playerName)) return;
         if (!clientLoadedScene)
         {
             // Ready/AddPlayer is usually triggered by a scene load completing.
@@ -82,6 +82,9 @@ public class NetMan : NetworkManager
             if (autoCreatePlayer)
                 NetworkClient.AddPlayer();
         }
+        //PosMessage pos = new PosMessage() { vector2 = new Vector2(0, 0) };
+
+        //NetworkClient.Send(pos);
         _playerSpawned = true;
         UIManager.Instance.SpawnGroupToogle();
     }

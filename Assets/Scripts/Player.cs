@@ -69,17 +69,22 @@ public class Player : NetworkBehaviour
 
     public void NewName()
     {
-        if (isOwned)
-        {
+        //if (isOwned)
+        //{
             if (isServer)
             {
+                Debug.Log("IsServerNewName");
                 SetPlayerName(PlayerManager.Instance.PlayerName);
             }
             else
             {
+                Debug.Log("ElseNewName");
                 CmdSetPlayerName(PlayerManager.Instance.PlayerName);
             }
-        }
+
+            //CmdSetPlayerName(PlayerManager.Instance.PlayerName);
+        //}
+        
     }
 
 
@@ -92,6 +97,11 @@ public class Player : NetworkBehaviour
     private void SyncHealth(int oldValue, int newValue)
     {
         Health = newValue;
+    }
+
+    private void ShowNamePlayer()
+    {
+        PlayerName.text = _synchName;
     }
 
     [Server]
@@ -123,10 +133,9 @@ public class Player : NetworkBehaviour
     [Server]
     public void SetPlayerName(string newName)
     {
-        _synchName = newName; 
-        PlayerName.text = _synchName;
-        
-
+        Debug.Log("SetPlayerName " + newName);
+        _synchName = newName;
+        ShowNamePlayer();
     }
 
     [Command]
@@ -151,14 +160,18 @@ public class Player : NetworkBehaviour
     public void CmdSetPlayerName(string newName)
     {
         SetPlayerName(newName);
-        //_playerName = PlayerManager.Instance.PlayerName;
-        //PlayerName.text = _playerName;
+        Debug.Log("CmdSetPlayerName " + newName);
+        //_synchName = PlayerManager.Instance.PlayerName;
+        //PlayerName.text = _synchName;
     }
 
     void Update()
     {
+        if (PlayerName.text != _synchName) ShowNamePlayer();
+
         if (isOwned)
         {
+            
             #region Movement
             float deltaX = Input.GetAxis("Horizontal") * speed * Time.deltaTime;
             Vector2 movement = new Vector2(deltaX, 0);
@@ -194,28 +207,9 @@ public class Player : NetworkBehaviour
                 _jump = false;
             }
 
-            MovingPlatform platform = null;
-            if (hit != null)
-            {
-                platform = hit.GetComponent<MovingPlatform>();
-            }
-            if (platform != null)
-            {
-                transform.parent = platform.transform;
-            }
-            else
-            {
-                transform.parent = null;
-            }
-            //_anim.SetFloat("Speed", Mathf.Abs(deltaX));
-            Vector3 pScale = Vector3.one;
-            if (platform != null)
-            {
-                pScale = platform.transform.localScale;
-            }
             if (deltaX != 0)
             {
-                transform.localScale = new Vector3(Mathf.Sign(deltaX) * 2 / pScale.x, 2 / pScale.y, 1);
+                transform.localScale = new Vector3(Mathf.Sign(deltaX) * 2, 2, 1);
             }
             #endregion
 
@@ -242,7 +236,10 @@ public class Player : NetworkBehaviour
                 else
                     CmdSpawnBullet(netId, pos);
             }
+
+            
         }
+        
 
         for (int i = 0; i < HealthGos.Length; i++)
         {
