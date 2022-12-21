@@ -221,7 +221,7 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0
   target: {fileID: 1439737907258461196}
-  clientAuthority: 0
+  clientAuthority: 1
   onlySyncOnChange: 1
   bufferResetMultiplier: 5
   positionSensitivity: 0.01

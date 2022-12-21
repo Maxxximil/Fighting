@@ -160,14 +160,23 @@ public class Player : NetworkBehaviour
     public void CmdSetPlayerName(string newName)
     {
         SetPlayerName(newName);
+        RpcSetPlayerName(newName);
         Debug.Log("CmdSetPlayerName " + newName);
         //_synchName = PlayerManager.Instance.PlayerName;
         //PlayerName.text = _synchName;
     }
 
+    [ClientRpc]
+    public void RpcSetPlayerName(string newName)
+    {
+        Debug.Log("CmdSetPlayerName " + newName);
+        _synchName = newName;
+        ShowNamePlayer();
+    }
+
     void Update()
     {
-        if (PlayerName.text != _synchName) ShowNamePlayer();
+        //if (PlayerName.text != _synchName) ShowNamePlayer();
 
         if (isOwned)
         {
