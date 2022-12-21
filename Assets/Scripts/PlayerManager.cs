@@ -27,7 +27,12 @@ public class PlayerManager : MonoBehaviour
     private void Awake()
     {
         _instance = this;
-        PlayerName = "";
+    }
+
+    private void Start()
+    {
+        _playerName = "Default";
+        PlayerName = _playerName;
     }
 
     public void SetPlayerName()

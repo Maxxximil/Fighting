@@ -6,8 +6,8 @@ using Mirror;
 using TMPro;
 public class Player : NetworkBehaviour
 {
-    [SyncVar(hook = nameof(SyncHealth))] int _synchHealth;
-    [SyncVar(hook = nameof(SyncName))] string _synchName;
+    [SyncVar(hook = nameof(SyncHealth))][SerializeField] int _synchHealth;
+    [SyncVar(hook = nameof(SyncName))] [SerializeField] string _synchName;
     [SyncVar]
     [SerializeField]
     private float speed = 250;
@@ -54,23 +54,11 @@ public class Player : NetworkBehaviour
         //}
     }
 
-    //private void SetInputManagerPlayer()
-    //{
-    //    InputManager.Instance.SetPlayer(this);
-    //    UIManager.Instance.SpawnGroupToogle();
-    //}
-
-    //[Command]
-    //public void CmdMovePlayer(Vector2 movePlayer)
-    //{
-    //    _body.AddForce(movePlayer.normalized * speed);
-    //}
-
 
     public void NewName()
     {
-        //if (isOwned)
-        //{
+        if (isOwned)
+        {
             if (isServer)
             {
                 Debug.Log("IsServerNewName");
@@ -83,8 +71,8 @@ public class Player : NetworkBehaviour
             }
 
             //CmdSetPlayerName(PlayerManager.Instance.PlayerName);
-        //}
-        
+        }
+
     }
 
 
@@ -162,21 +150,22 @@ public class Player : NetworkBehaviour
         SetPlayerName(newName);
         RpcSetPlayerName(newName);
         Debug.Log("CmdSetPlayerName " + newName);
-        //_synchName = PlayerManager.Instance.PlayerName;
+        //_synchName = newName;
         //PlayerName.text = _synchName;
     }
 
     [ClientRpc]
     public void RpcSetPlayerName(string newName)
     {
-        Debug.Log("CmdSetPlayerName " + newName);
+        Debug.Log("RpcSetPlayerName " + newName);
         _synchName = newName;
         ShowNamePlayer();
     }
 
+
     void Update()
     {
-        //if (PlayerName.text != _synchName) ShowNamePlayer();
+        if (PlayerName.text != _synchName) ShowNamePlayer();
 
         if (isOwned)
         {
