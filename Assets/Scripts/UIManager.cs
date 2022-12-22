@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+
 public class UIManager : MonoBehaviour
 {
     #region
@@ -35,5 +36,6 @@ public class UIManager : MonoBehaviour
     {
         _playerName.text = "Your Name is " + name;
     }
+
 
 }

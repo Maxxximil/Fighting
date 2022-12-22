@@ -42,9 +42,10 @@ public class NetMan : NetworkManager
 
     public override void OnClientConnect()
     {
-        //base.OnClientConnect();
-        _playerConnected = true;
         UIManager.Instance.SpawnGroupToogle();
+        base.OnClientConnect();
+        _playerConnected = true;
+        
     }
     public override void OnStartServer()
     {
@@ -72,20 +73,23 @@ public class NetMan : NetworkManager
     {
         _playerName = PlayerManager.Instance.PlayerName;
         UIManager.Instance.ChangePlayerText(_playerName);
+        NetworkClient.AddPlayer();
+
         //if (string.IsNullOrWhiteSpace(_playerName)) return;
 
-        if (!clientLoadedScene)
-        {
-            // Ready/AddPlayer is usually triggered by a scene load completing.
-            // if no scene was loaded, then Ready/AddPlayer it here instead.
-            if (!NetworkClient.ready)
-                NetworkClient.Ready();
+        //if (!clientLoadedScene)
+        //{
+        //    // Ready/AddPlayer is usually triggered by a scene load completing.
+        //    // if no scene was loaded, then Ready/AddPlayer it here instead.
+        //    if (!NetworkClient.ready)
+        //        NetworkClient.Ready();
 
-            //if (autoCreatePlayer)
-            //    NetworkClient.AddPlayer();
-            NetworkClient.AddPlayer();
+        //    //if (autoCreatePlayer)
+        //    //    NetworkClient.AddPlayer();
+        //    NetworkClient.AddPlayer();
 
-        }
+        //}
+
         //if (!NetworkClient.ready && NetworkClient.isConnected)
         //{
         //    NetworkClient.Ready();
