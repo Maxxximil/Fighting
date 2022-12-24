@@ -29,95 +29,95 @@ public class NetMan : NetworkManager
         _instance = this;
     }
 
-    public void SetPlayer(Player pl1)
-    {
-        _playerObj = pl1;
-        SetNamePlayer();
-    }
+    //public void SetPlayer(Player pl1)
+    //{
+    //    _playerObj = pl1;
+    //    SetNamePlayer();
+    //}
 
-    public void SetNamePlayer()
-    {
-        _playerObj.NewName();
-    }
+    //public void SetNamePlayer()
+    //{
+    //    _playerObj.NewName();
+    //}
 
-    public override void OnClientConnect()
-    {
-        UIManager.Instance.SpawnGroupToogle();
-        base.OnClientConnect();
-        _playerConnected = true;
+    //public override void OnClientConnect()
+    //{
+    //    UIManager.Instance.SpawnGroupToogle();
+    //    base.OnClientConnect();
+    //    _playerConnected = true;
         
-    }
-    public override void OnStartServer()
-    {
-        base.OnStartServer();
-        NetworkServer.RegisterHandler<PosMessage>(OnCreateCharacter);
-    }
+    //}
+    //public override void OnStartServer()
+    //{
+    //    base.OnStartServer();
+    //    NetworkServer.RegisterHandler<PosMessage>(OnCreateCharacter);
+    //}
 
-    public void OnCreateCharacter(NetworkConnectionToClient conn, PosMessage message)
-    {
-        GameObject go = Instantiate(playerPrefab, message.vector2, Quaternion.identity);
-        NetworkServer.AddPlayerForConnection(conn, go);
-    }
+    //public void OnCreateCharacter(NetworkConnectionToClient conn, PosMessage message)
+    //{
+    //    GameObject go = Instantiate(playerPrefab, message.vector2, Quaternion.identity);
+    //    NetworkServer.AddPlayerForConnection(conn, go);
+    //}
 
-    public override void Update()
-    {
-        base.Update();
-        //if(Input.GetKeyDown(KeyCode.Mouse0)&&!_playerSpawned && _playerConnected)
-        //{
-        //    ActivatePlayerSpawn();
-        //}
-    }
-
-
-    public void SpawnPlayer()
-    {
-        _playerName = PlayerManager.Instance.PlayerName;
-        UIManager.Instance.ChangePlayerText(_playerName);
-        NetworkClient.AddPlayer();
-
-        //if (string.IsNullOrWhiteSpace(_playerName)) return;
-
-        //if (!clientLoadedScene)
-        //{
-        //    // Ready/AddPlayer is usually triggered by a scene load completing.
-        //    // if no scene was loaded, then Ready/AddPlayer it here instead.
-        //    if (!NetworkClient.ready)
-        //        NetworkClient.Ready();
-
-        //    //if (autoCreatePlayer)
-        //    //    NetworkClient.AddPlayer();
-        //    NetworkClient.AddPlayer();
-
-        //}
-
-        //if (!NetworkClient.ready && NetworkClient.isConnected)
-        //{
-        //    NetworkClient.Ready();
-        //    if (NetworkClient.localPlayer == null)
-        //    {
-        //        NetworkClient.AddPlayer();
-        //    }
-        //}
-
-        //if (NetworkClient.localPlayer == null)
-        //{
-        //    NetworkClient.AddPlayer();
-        //}
+    //public override void Update()
+    //{
+    //    base.Update();
+    //    //if(Input.GetKeyDown(KeyCode.Mouse0)&&!_playerSpawned && _playerConnected)
+    //    //{
+    //    //    ActivatePlayerSpawn();
+    //    //}
+    //}
 
 
+    //public void SpawnPlayer()
+    //{
+    //    _playerName = PlayerManager.Instance.PlayerName;
+    //    UIManager.Instance.ChangePlayerText(_playerName);
+    //    NetworkClient.AddPlayer();
 
-        //if (autoCreatePlayer)
-        //    NetworkClient.AddPlayer();
-        //PosMessage pos = new PosMessage() { vector2 = new Vector2(0, 0) };
+    //    //if (string.IsNullOrWhiteSpace(_playerName)) return;
 
-        //NetworkClient.Send(pos);
-        _playerSpawned = true;
-        UIManager.Instance.SpawnGroupToogle();
-    }
+    //    //if (!clientLoadedScene)
+    //    //{
+    //    //    // Ready/AddPlayer is usually triggered by a scene load completing.
+    //    //    // if no scene was loaded, then Ready/AddPlayer it here instead.
+    //    //    if (!NetworkClient.ready)
+    //    //        NetworkClient.Ready();
+
+    //    //    //if (autoCreatePlayer)
+    //    //    //    NetworkClient.AddPlayer();
+    //    //    NetworkClient.AddPlayer();
+
+    //    //}
+
+    //    //if (!NetworkClient.ready && NetworkClient.isConnected)
+    //    //{
+    //    //    NetworkClient.Ready();
+    //    //    if (NetworkClient.localPlayer == null)
+    //    //    {
+    //    //        NetworkClient.AddPlayer();
+    //    //    }
+    //    //}
+
+    //    //if (NetworkClient.localPlayer == null)
+    //    //{
+    //    //    NetworkClient.AddPlayer();
+    //    //}
+
+
+
+    //    //if (autoCreatePlayer)
+    //    //    NetworkClient.AddPlayer();
+    //    //PosMessage pos = new PosMessage() { vector2 = new Vector2(0, 0) };
+
+    //    //NetworkClient.Send(pos);
+    //    _playerSpawned = true;
+    //    UIManager.Instance.SpawnGroupToogle();
+    //}
 
 }
 
-public struct PosMessage : NetworkMessage
-{
-    public Vector2 vector2;
-}
+//public struct PosMessage : NetworkMessage
+//{
+//    public Vector2 vector2;
+//}
