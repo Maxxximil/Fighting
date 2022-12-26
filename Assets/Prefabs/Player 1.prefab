@@ -1,5 +1,35 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &1357846079928739033
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 909783797194811479}
+  m_Layer: 3
+  m_Name: AttackPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &909783797194811479
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1357846079928739033}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.407, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1439737907258461196}
+  m_RootOrder: 6
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1439737907258461201
 GameObject:
   m_ObjectHideFlags: 0
@@ -20,9 +50,10 @@ GameObject:
   - component: {fileID: 5325496712263905364}
   - component: {fileID: 1439737907258461194}
   - component: {fileID: 80455760021999170}
-  m_Layer: 0
+  - component: {fileID: 4203937512759191942}
+  m_Layer: 3
   m_Name: Player 1
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -44,6 +75,7 @@ Transform:
   - {fileID: 7053804769822279127}
   - {fileID: 2795390138767590686}
   - {fileID: 2273106286289151220}
+  - {fileID: 909783797194811479}
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -211,7 +243,7 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0.1
   target: {fileID: 1439737907258461198}
-  clientAuthority: 0
+  clientAuthority: 1
   syncVelocity: 1
   clearVelocity: 0
   velocitySensitivity: 0.1
@@ -323,6 +355,27 @@ MonoBehaviour:
   showGizmos: 0
   showOverlay: 0
   overlayColor: {r: 0, g: 0, b: 0, a: 0.5}
+--- !u!114 &4203937512759191942
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1439737907258461201}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed938cac74309ed4e9bfd3ae45650fe5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0.1
+  AttackPoint: {fileID: 909783797194811479}
+  DamageableLayerMask:
+    serializedVersion: 2
+    m_Bits: 8
+  Damage: 1
+  AttackRadius: 0.32
 --- !u!1 &3087081392366066126
 GameObject:
   m_ObjectHideFlags: 0
@@ -333,7 +386,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5889712164571265261}
   - component: {fileID: 2337672531546310113}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Square
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -415,7 +468,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1886932987582868194}
   - component: {fileID: 3713316861223055570}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Square (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -497,7 +550,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7053804769822279127}
   - component: {fileID: 5649194370197401822}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Square (3)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -579,7 +632,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2795390138767590686}
   - component: {fileID: 8421476094917694994}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Square (4)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -661,7 +714,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4917145241432566772}
   - component: {fileID: 5476488379154999494}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Square (2)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -744,7 +797,7 @@ GameObject:
   - component: {fileID: 2273106286289151220}
   - component: {fileID: 6982563587542675864}
   - component: {fileID: 3735646748026413862}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Name
   m_TagString: Untagged
   m_Icon: {fileID: 0}

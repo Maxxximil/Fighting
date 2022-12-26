@@ -17,6 +17,7 @@ public class Bullet : NetworkBehaviour
         this.owner = owner;
         this.target = target;
         inited = true;
+
     }
 
     private void Update()

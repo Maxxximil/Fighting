@@ -35,6 +35,8 @@ public class Player : NetworkBehaviour
     private bool _grounded = false;
     private bool _jump = false;
     private bool _facingRight = true;
+    private bool _isMoved = false;
+    private float deltaX = 0;
     void Start()
     {
        
@@ -205,7 +207,11 @@ public class Player : NetworkBehaviour
     [Command]
     public void CmdSpawnBullet(uint owner, Vector3 target)
     {
-        SpawnBullet(owner, target);
+        //SpawnBullet(owner, target);
+        Debug.Log("CmdSpawBullet");
+        GameObject bulletGO = Instantiate(BulletPrefab, transform.position, Quaternion.identity);
+        NetworkServer.Spawn(bulletGO);
+        bulletGO.GetComponent<Bullet>().Init(owner, target);
     }
 
     [Command]
@@ -224,7 +230,7 @@ public class Player : NetworkBehaviour
         {
             _anim = GetComponent<Animator>();
             #region Movement
-            float deltaX = Input.GetAxis("Horizontal") * speed * Time.deltaTime;
+            //float deltaX = Input.GetAxis("Horizontal") * speed * Time.deltaTime;
             Vector2 movement = new Vector2(deltaX, 0);
             transform.Translate(movement);
 
@@ -283,9 +289,17 @@ public class Player : NetworkBehaviour
 
             if (Input.GetKeyDown(KeyCode.Mouse1))
             {
+                Debug.Log("Attack");
+                _anim.SetTrigger("Attack");
                 Vector3 pos = Input.mousePosition;
+                Debug.Log("Attack pos " + pos);
                 pos.z = 10f;
                 pos = Camera.main.ScreenToWorldPoint(pos);
+                Debug.Log("Attack pos after camera " + pos);
+
+                //GameObject bulletGO = Instantiate(BulletPrefab, transform.position, Quaternion.identity);
+                //NetworkServer.Spawn(bulletGO);
+                //bulletGO.GetComponent<Bullet>().Init(netId, pos);
 
                 if (isServer)
                     SpawnBullet(netId, pos);
@@ -331,14 +345,53 @@ public class Player : NetworkBehaviour
         }
     }
 
-    //public void Jump()
-    //{
-    //    Debug.Log("Button");
-    //    //_jump = true;
-    //    if (/*_grounded && */isOwned)
-    //    {
-    //        Debug.Log("Jump");
-    //        _body.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
-    //    }
-    //}
+    public void Jump()
+    {
+        //Debug.Log("Button");
+        
+        if (isOwned)
+        {
+            //Debug.Log("Jump");
+            Vector3 max = _box.bounds.max;
+            Vector3 min = _box.bounds.min;
+            Vector2 corner1 = new Vector2(max.x, min.y - .1f);
+            Vector2 corner2 = new Vector2(min.x, min.y - .2f);
+            Collider2D hit = Physics2D.OverlapArea(corner1, corner2);
+            _grounded = true;
+            if (hit == null)
+            {
+                _grounded = false;
+            }
+            if (_grounded)
+            {
+                _body.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
+            }
+        }
+    }
+
+    public void Left()
+    {
+        float deltaX = -10 * speed * Time.deltaTime;
+        Vector2 movement = new Vector2(deltaX, 0);
+        transform.Translate(movement);
+        _isMoved = true;
+    }
+
+    public void Right()
+    {
+        float deltaX = 10 * speed * Time.deltaTime;
+        Vector2 movement = new Vector2(deltaX, 0);
+        transform.Translate(movement);
+        _isMoved = true;
+    }
+
+    public void Move(float move)
+    {
+        if (isOwned)
+        {
+            deltaX = move * 0.03f /** speed * Time.deltaTime*/;
+            Debug.Log(deltaX);
+            
+        }
+    }
 }
