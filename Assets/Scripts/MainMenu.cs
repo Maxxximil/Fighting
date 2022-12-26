@@ -28,11 +28,26 @@ public class MainMenu : NetworkBehaviour
     public static MainMenu Instanse;
     public readonly SyncList<Match> matches = new SyncList<Match>();
     public readonly SyncList<string> matcheIDs = new SyncList<string>();
+    private NetworkManager _networkManager;
+
+    [Header("MainMenu")]
     public TMP_InputField JoinInput;
     public Button HostButtom;
     public Button JoinButtom;
+    public Button ChangeNameButton;
     public Canvas LobbyCanvas;
 
+    [Header("Name")]
+    public GameObject ChangeNamePanel;
+    public GameObject CloseButton;
+    public Button SetNameButton;
+    public TMP_InputField NameInput;
+    public int FirstTime = 1;
+    [SyncVar] public string DisplayName;
+
+
+
+    [Header("Lobby")]
     public Transform UILayerParent;
     public GameObject UIPlayerPrefab;
     public TMP_Text IDText;
@@ -43,6 +58,20 @@ public class MainMenu : NetworkBehaviour
     private void Start()
     {
         Instanse = this;
+
+        _networkManager = FindObjectOfType<NetworkManager>();
+
+        FirstTime = PlayerPrefs.GetInt("FirstTime", 1);
+
+        if (!PlayerPrefs.HasKey("Name"))
+        {
+            return;
+        }
+
+        string defaultName = PlayerPrefs.GetString("Name");
+        NameInput.text = defaultName;
+        DisplayName = defaultName;
+        SetName(defaultName);
     }
 
     private void Update()
@@ -54,6 +83,53 @@ public class MainMenu : NetworkBehaviour
             {
                 players[i].gameObject.transform.localScale = Vector3.zero;
             }
+
+            if (FirstTime == 1)
+            {
+                ChangeNamePanel.SetActive(true);
+                CloseButton.SetActive(false);
+            }
+            else
+            {
+                CloseButton.SetActive(true);
+            }
+            if (PlayerPrefs.HasKey("Name"))
+            {
+                FirstTime = 0;
+            }
+            PlayerPrefs.SetInt("FirstTime", FirstTime);
+        }
+    }
+
+    public void SetName(string name)
+    {
+        SetNameButton.interactable = !string.IsNullOrEmpty(name);
+    }
+
+    public void SaveName()
+    {
+        JoinInput.interactable = false;
+        HostButtom.interactable = false;
+        JoinButtom.interactable = false;
+        ChangeNameButton.interactable = false;
+
+        FirstTime = 0;
+
+        ChangeNamePanel.SetActive(false);
+        DisplayName = NameInput.text;
+        PlayerPrefs.SetString("Name", DisplayName);
+        Invoke(nameof(Disconect), 1f);
+    }
+
+    void Disconect()
+    {
+        if (_networkManager.mode == NetworkManagerMode.Host)
+        {
+            _networkManager.StopHost();
+        }
+        else if(_networkManager.mode == NetworkManagerMode.ClientOnly)
+        {
+            _networkManager.StopClient();
         }
     }
 
@@ -62,6 +138,7 @@ public class MainMenu : NetworkBehaviour
         JoinInput.interactable = false;
         HostButtom.interactable = false;
         JoinButtom.interactable = false;
+        ChangeNameButton.interactable = false;
 
         Player.localPlayer.HostGame();
     }
@@ -81,6 +158,8 @@ public class MainMenu : NetworkBehaviour
             JoinInput.interactable = true;
             HostButtom.interactable = true;
             JoinButtom.interactable = true;
+            ChangeNameButton.interactable = true;
+
         }
     }
 
@@ -89,6 +168,8 @@ public class MainMenu : NetworkBehaviour
         JoinInput.interactable = false;
         HostButtom.interactable = false;
         JoinButtom.interactable = false;
+        ChangeNameButton.interactable = false;
+
 
         Player.localPlayer.JoinGame(JoinInput.text.ToUpper());
     }
@@ -108,6 +189,8 @@ public class MainMenu : NetworkBehaviour
             JoinInput.interactable = true;
             HostButtom.interactable = true;
             JoinButtom.interactable = true;
+            ChangeNameButton.interactable = true;
+
         }
     }
 
@@ -166,7 +249,7 @@ public class MainMenu : NetworkBehaviour
     public void SpawnPlayerUIPrefab(Player player)
     {
         GameObject newUIPlayer = Instantiate(UIPlayerPrefab, UILayerParent);
-        newUIPlayer.GetComponent<PlayerUI>().SetPlayer(player);
+        newUIPlayer.GetComponent<PlayerUI>().SetPlayer(player.PlayerDisplayName);
     }
 
     public void StartGame()

@@ -8,14 +8,13 @@ using UnityEngine.SceneManagement;
 public class Player : NetworkBehaviour
 {
     [SyncVar(hook = nameof(SyncHealth))][SerializeField] int _synchHealth;
-    [SyncVar(hook = nameof(SyncName))] [SerializeField] string _synchName;
-    [SyncVar]
-    [SerializeField]
-    private float speed = 250;
+    [SyncVar] [SerializeField] private float speed = 250;
     [SyncVar] public string matchID;
-
+    [SyncVar(hook = "DisplayPlayerName")] public string PlayerDisplayName;
 
     public static Player localPlayer;
+    public TMP_Text NameDisplayText;
+
 
 
 
@@ -49,6 +48,8 @@ public class Player : NetworkBehaviour
         if (isLocalPlayer)
         {
             localPlayer = this;
+
+            CmdSendName(MainMenu.Instanse.DisplayName);
         }
         else
         {
@@ -56,6 +57,18 @@ public class Player : NetworkBehaviour
         }
     }
 
+    [Command]
+    public void CmdSendName(string name)
+    {
+        PlayerDisplayName = name;
+    }
+
+    public void DisplayPlayerName(string name, string playerName)
+    {
+        name = playerName;
+        Debug.Log("Name: " + name + " : " + playerName);
+        NameDisplayText.text = playerName;
+    }
 
     public void HostGame()
     {
@@ -150,42 +163,12 @@ public class Player : NetworkBehaviour
     }
 
 
-    public void NewName()
-    {
-        if (isOwned)
-        {
-            if (isServer)
-            {
-                Debug.Log("IsServerNewName");
-                SetPlayerName(PlayerManager.Instance.PlayerName);
-            }
-            else
-            {
-                Debug.Log("ElseNewName");
-                CmdSetPlayerName(PlayerManager.Instance.PlayerName);
-            }
-
-            //CmdSetPlayerName(PlayerManager.Instance.PlayerName);
-        }
-
-    }
-
-
-
-    private void SyncName(string oldValue, string newValue)
-    {
-        Name = newValue;
-    }
-
     private void SyncHealth(int oldValue, int newValue)
     {
         Health = newValue;
     }
 
-    private void ShowNamePlayer()
-    {
-        PlayerName.text = _synchName;
-    }
+    
 
     [Server]
     public void ChangeHealthValue(int newValue)
@@ -213,14 +196,6 @@ public class Player : NetworkBehaviour
     }
 
 
-    [Server]
-    public void SetPlayerName(string newName)
-    {
-        Debug.Log("SetPlayerName " + newName);
-        _synchName = newName;
-        ShowNamePlayer();
-    }
-
     [Command]
     public void CmdOutOfMap()
     {
@@ -239,28 +214,11 @@ public class Player : NetworkBehaviour
         ChangeHealthValue(newValue);
     }
 
-    [Command]
-    public void CmdSetPlayerName(string newName)
-    {
-        SetPlayerName(newName);
-        RpcSetPlayerName(newName);
-        Debug.Log("CmdSetPlayerName " + newName);
-        //_synchName = newName;
-        //PlayerName.text = _synchName;
-    }
-
-    [ClientRpc]
-    public void RpcSetPlayerName(string newName)
-    {
-        Debug.Log("RpcSetPlayerName " + newName);
-        _synchName = newName;
-        ShowNamePlayer();
-    }
+  
 
 
     void Update()
     {
-        if (PlayerName.text != _synchName) ShowNamePlayer();
 
         if (isOwned)
         {
@@ -299,11 +257,6 @@ public class Player : NetworkBehaviour
                 _body.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
                 _jump = false;
             }
-
-            //if (deltaX != 0)
-            //{
-            //    transform.localScale = new Vector3(Mathf.Sign(deltaX) * 2, 2, 1);
-            //}
 
             #endregion
 
@@ -358,6 +311,9 @@ public class Player : NetworkBehaviour
             Vector3 Scale = transform.localScale;
             Scale.x *= -1;
             transform.localScale = Scale;
+            Vector3 TextScale = NameDisplayText.transform.localScale;
+            TextScale.x *= -1;
+            NameDisplayText.transform.localScale = TextScale;
         }
     }
     private void OnTriggerEnter2D(Collider2D collision)

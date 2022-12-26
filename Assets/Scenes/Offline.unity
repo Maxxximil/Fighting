@@ -236,7 +236,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 130557326}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 282b2a86c79d42645a895a7a2e816420, type: 3}
+  m_Script: {fileID: 11500000, guid: 8aab4c8111b7c411b9b92cf3dbc5bd4e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   dontDestroyOnLoad: 1
@@ -247,8 +247,8 @@ MonoBehaviour:
   offlineScene: Assets/Scenes/Offline.unity
   onlineScene: Assets/Scenes/Lobby.unity
   transport: {fileID: 130557327}
-  networkAddress: localhost
-  maxConnections: 100
+  networkAddress: 172.16.0.189
+  maxConnections: 4
   authenticator: {fileID: 0}
   playerPrefab: {fileID: 1439737907258461201, guid: 1e087faebdfd713478999061bd3e63fa, type: 3}
   autoCreatePlayer: 1
@@ -689,7 +689,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 130557329}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: Mirror.NetworkManager, Mirror
         m_MethodName: StartHost
         m_Mode: 1

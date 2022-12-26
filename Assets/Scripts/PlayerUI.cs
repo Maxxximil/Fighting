@@ -6,11 +6,10 @@ using TMPro;
 public class PlayerUI : MonoBehaviour
 {
     public TMP_Text PlayerText;
-    private Player _player;
 
-    public void SetPlayer(Player player)
+    public void SetPlayer(string name)
     {
-        this._player = player;
-        PlayerText.text = "Name";
+        
+        PlayerText.text = name;
     }
 }
