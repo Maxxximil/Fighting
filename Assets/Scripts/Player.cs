@@ -8,13 +8,13 @@ using UnityEngine.SceneManagement;
 public class Player : NetworkBehaviour
 {
     [SyncVar(hook = nameof(SyncHealth))][SerializeField] int _synchHealth;
-    [SyncVar]
-    [SerializeField]
-    private float speed = 250;
+    [SyncVar] [SerializeField] private float speed = 250;
     [SyncVar] public string matchID;
-
+    [SyncVar(hook = "DisplayPlayerName")] public string PlayerDisplayName;
 
     public static Player localPlayer;
+    public TMP_Text NameDisplayText;
+
 
 
 
@@ -48,6 +48,8 @@ public class Player : NetworkBehaviour
         if (isLocalPlayer)
         {
             localPlayer = this;
+
+            CmdSendName(MainMenu.Instanse.DisplayName);
         }
         else
         {
@@ -55,6 +57,18 @@ public class Player : NetworkBehaviour
         }
     }
 
+    [Command]
+    public void CmdSendName(string name)
+    {
+        PlayerDisplayName = name;
+    }
+
+    public void DisplayPlayerName(string name, string playerName)
+    {
+        name = playerName;
+        Debug.Log("Name: " + name + " : " + playerName);
+        NameDisplayText.text = playerName;
+    }
 
     public void HostGame()
     {
@@ -297,6 +311,9 @@ public class Player : NetworkBehaviour
             Vector3 Scale = transform.localScale;
             Scale.x *= -1;
             transform.localScale = Scale;
+            Vector3 TextScale = NameDisplayText.transform.localScale;
+            TextScale.x *= -1;
+            NameDisplayText.transform.localScale = TextScale;
         }
     }
     private void OnTriggerEnter2D(Collider2D collision)
