@@ -18,17 +18,17 @@ public class AttackController : NetworkBehaviour
 
     private void Update()
     {
-        //if (isOwned)
-        //{
-        //    _animator = GetComponent<Animator>();
+        if (isOwned)
+        {
+            _animator = GetComponent<Animator>();
 
-        //    if (Input.GetKeyDown(KeyCode.Mouse1))
-        //    {
-        //        Attack();
-        //        _animator.SetTrigger("Attack");
-        //    }
-        //}
-       
+            if (Input.GetKeyDown(KeyCode.Mouse1))
+            {
+                Attack();
+                _animator.SetTrigger("Attack");
+            }
+        }
+
     }
 
     private void OnDrawGizmosSelected()
@@ -38,14 +38,14 @@ public class AttackController : NetworkBehaviour
     }
     public void Attack()
     {
-        //var enemies = Physics2D.OverlapCircleAll(AttackPoint.position, AttackRadius, DamageableLayerMask);
-        //if (enemies.Length > 0)
-        //{
-        //    Debug.Log("DealDamage");
-        //    //for (int i = 0; i < enemies.Length; i++)
-        //    //{
-        //    //    //enemies[i].GetComponent<>().TakeDamage(Damage);
-        //    //}
-        //}
+        Collider2D[] enemies = Physics2D.OverlapCircleAll(AttackPoint.position, AttackRadius, DamageableLayerMask);
+        if (enemies.Length > 0)
+        {
+            Debug.Log("DealDamage");
+            //for (int i = 0; i < enemies.Length; i++)
+            //{
+            //    //enemies[i].GetComponent<>().TakeDamage(Damage);
+            //}
+        }
     }
 }

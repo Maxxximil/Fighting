@@ -55,6 +55,8 @@ public class MainMenu : NetworkBehaviour
     public GameObject TurnManager;
     public bool InGame;
 
+    public GameObject Fireball;
+
     private void Start()
     {
         Instanse = this;
@@ -277,6 +279,14 @@ public class MainMenu : NetworkBehaviour
                 break;
             }
         }
+    }
+
+    public void SpawnFirebal(string matchID, Vector3 pos, uint owner, Vector3 target)
+    {
+        GameObject newFireBall = Instantiate(Fireball,pos,Quaternion.identity);
+        NetworkServer.Spawn(newFireBall);
+        newFireBall.GetComponent<NetworkMatch>().matchId = matchID.ToGuid();
+        newFireBall.GetComponent<Bullet>().Init(owner, target);
     }
 }
 

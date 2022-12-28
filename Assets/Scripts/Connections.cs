@@ -17,7 +17,7 @@ public class Connections : MonoBehaviour
 
     public void JoinClient()
     {
-        _networkManager.networkAddress = "192.168.0.104";
+        _networkManager.networkAddress = "localhost";
         _networkManager.StartClient();
     }
 }

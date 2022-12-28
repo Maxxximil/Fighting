@@ -843,6 +843,7 @@ MonoBehaviour:
   BeginGameButton: {fileID: 866476939}
   TurnManager: {fileID: 9011435500537728605, guid: 8c8c2b730e07ecc4397e1b59d9a76706, type: 3}
   InGame: 0
+  Fireball: {fileID: 3891346027893421945, guid: c9949a42b4b7e7b41bccdbbc53bc7398, type: 3}
 --- !u!1 &260952714
 GameObject:
   m_ObjectHideFlags: 0

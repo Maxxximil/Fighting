@@ -227,6 +227,7 @@ MonoBehaviour:
   - {fileID: 5672455479882437671}
   - {fileID: 6173453972489616815}
   PlayerName: {fileID: 3735646748026413862}
+  BatlleField: {fileID: 1439737907258461196}
 --- !u!114 &3724501469146358918
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -362,7 +363,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1439737907258461201}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ed938cac74309ed4e9bfd3ae45650fe5, type: 3}
   m_Name: 
@@ -373,7 +374,7 @@ MonoBehaviour:
   AttackPoint: {fileID: 909783797194811479}
   DamageableLayerMask:
     serializedVersion: 2
-    m_Bits: 8
+    m_Bits: 16
   Damage: 1
   AttackRadius: 0.32
 --- !u!1 &3087081392366066126

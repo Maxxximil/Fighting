@@ -26,6 +26,7 @@ public class Player : NetworkBehaviour
     public string Name;
     public GameObject[] HealthGos;
     public TMP_Text PlayerName;
+    
 
 
     private NetworkMatch networkMatch;
@@ -186,6 +187,7 @@ public class Player : NetworkBehaviour
     [Server]
     public void SpawnBullet(uint owner, Vector3 target)
     {
+        Debug.Log("SpawnBullet");
         GameObject bulletGO = Instantiate(BulletPrefab, transform.position, Quaternion.identity);
         NetworkServer.Spawn(bulletGO);
         bulletGO.GetComponent<Bullet>().Init(owner, target);
@@ -207,11 +209,14 @@ public class Player : NetworkBehaviour
     [Command]
     public void CmdSpawnBullet(uint owner, Vector3 target)
     {
+        Debug.Log("CmdSpawnBullet");
+
+        MainMenu.Instanse.SpawnFirebal(matchID,transform.position,owner,target);
+
         //SpawnBullet(owner, target);
-        Debug.Log("CmdSpawBullet");
-        GameObject bulletGO = Instantiate(BulletPrefab, transform.position, Quaternion.identity);
-        NetworkServer.Spawn(bulletGO);
-        bulletGO.GetComponent<Bullet>().Init(owner, target);
+        //GameObject bulletGO = Instantiate(BulletPrefab, transform.position, Quaternion.identity);
+        //NetworkServer.Spawn(bulletGO);
+        //bulletGO.GetComponent<Bullet>().Init(owner, target);
     }
 
     [Command]
@@ -220,7 +225,7 @@ public class Player : NetworkBehaviour
         ChangeHealthValue(newValue);
     }
 
-  
+    
 
 
     void Update()
@@ -297,17 +302,27 @@ public class Player : NetworkBehaviour
                 pos = Camera.main.ScreenToWorldPoint(pos);
                 Debug.Log("Attack pos after camera " + pos);
 
+                //CmdSpawnBullet(netId, pos);
+
                 //GameObject bulletGO = Instantiate(BulletPrefab, transform.position, Quaternion.identity);
                 //NetworkServer.Spawn(bulletGO);
                 //bulletGO.GetComponent<Bullet>().Init(netId, pos);
+                //bulletGO.GetComponent<Bullet>().Init(netId, pos);
+
+
 
                 if (isServer)
+                {
                     SpawnBullet(netId, pos);
+                }
                 else
+                {
                     CmdSpawnBullet(netId, pos);
+
+                }
             }
 
-            
+
         }
         
 
@@ -389,7 +404,7 @@ public class Player : NetworkBehaviour
     {
         if (isOwned)
         {
-            deltaX = move * 0.03f /** speed * Time.deltaTime*/;
+            deltaX = move * 0.025f /** speed * Time.deltaTime*/;
             Debug.Log(deltaX);
             
         }
