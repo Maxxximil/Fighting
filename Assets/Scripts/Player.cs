@@ -5,12 +5,18 @@ using UnityEngine.UI;
 using Mirror;
 using TMPro;
 using UnityEngine.SceneManagement;
+using System;
+
 public class Player : NetworkBehaviour
 {
     [SyncVar(hook = nameof(SyncHealth))][SerializeField] int _synchHealth;
     [SyncVar] [SerializeField] private float speed = 250;
     [SyncVar] public string matchID;
     [SyncVar(hook = "DisplayPlayerName")] public string PlayerDisplayName;
+
+    [SyncVar] public Match CurrentMatch;
+    public GameObject PlayerLobbyUI;
+    private Guid netIDGuid;
 
     public static Player localPlayer;
     public TMP_Text NameDisplayText;
@@ -28,6 +34,7 @@ public class Player : NetworkBehaviour
     public TMP_Text PlayerName;
 
 
+    private GameObject GameUI;
     private NetworkMatch networkMatch;
     private Rigidbody2D _body;
     private Animator _anim;
@@ -35,6 +42,15 @@ public class Player : NetworkBehaviour
     private bool _grounded = false;
     private bool _jump = false;
     private bool _facingRight = true;
+    private bool _isMoved = false;
+    private float deltaX = 0;
+    private float _atackCD = 0;
+
+    private void Awake()
+    {
+        networkMatch = GetComponent<NetworkMatch>();
+        GameUI = GameObject.FindGameObjectWithTag("GameUI");
+    }
     void Start()
     {
        
@@ -43,18 +59,39 @@ public class Player : NetworkBehaviour
         
         _box = GetComponent<BoxCollider2D>();
 
-        networkMatch = GetComponent<NetworkMatch>();
 
         if (isLocalPlayer)
         {
-            localPlayer = this;
-
             CmdSendName(MainMenu.Instanse.DisplayName);
+        }
+    }
+
+    public override void OnStartServer()
+    {
+        netIDGuid = netId.ToString().ToGuid();
+        networkMatch.matchId = netIDGuid;
+    }
+
+    public override void OnStartClient()
+    {
+        if (isLocalPlayer)
+        {
+            localPlayer = this;
         }
         else
         {
-            MainMenu.Instanse.SpawnPlayerUIPrefab(this);
+            PlayerLobbyUI = MainMenu.Instanse.SpawnPlayerUIPrefab(this);
         }
+    }
+
+    public override void OnStopClient()
+    {
+        ClientDisconnect();
+    }
+
+    public override void OnStopServer()
+    {
+        ServerDisconnect();
     }
 
     [Command]
@@ -70,17 +107,17 @@ public class Player : NetworkBehaviour
         NameDisplayText.text = playerName;
     }
 
-    public void HostGame()
+    public void HostGame(bool publicMatch)
     {
         string ID = MainMenu.GetRandomId();
-        CmdHostGame(ID);
+        CmdHostGame(ID, publicMatch);
     }
 
     [Command]
-    public void CmdHostGame(string ID)
+    public void CmdHostGame(string ID, bool publicMatch)
     {
         matchID = ID;
-        if (MainMenu.Instanse.HostGame(ID, gameObject))
+        if (MainMenu.Instanse.HostGame(ID, gameObject, publicMatch))
         {
             Debug.Log("Lobby create is successfull");
             networkMatch.matchId = ID.ToGuid();
@@ -131,6 +168,99 @@ public class Player : NetworkBehaviour
         MainMenu.Instanse.JoinSuccess(success, ID);
     }
 
+    public void DisconnectGame()
+    {
+        CmdDisconnectGame();
+    }
+
+    [Command]
+    public void CmdDisconnectGame()
+    {
+        ServerDisconnect();
+    }
+
+    void ServerDisconnect()
+    {
+        MainMenu.Instanse.PlayerDisconnected(gameObject, matchID);
+        RpcDisconnectGame();
+        networkMatch.matchId = netIDGuid;
+    }
+
+    [ClientRpc]
+    void RpcDisconnectGame()
+    {
+        ClientDisconnect();
+    }
+
+    void ClientDisconnect()
+    {
+        if(PlayerLobbyUI != null)
+        {
+            if (!isServer)
+            {
+                Destroy(PlayerLobbyUI);
+            }
+            else
+            {
+                PlayerLobbyUI.SetActive(false);
+            }
+        }
+    }
+
+    public void SearchGame()
+    {
+        CmdSearchGame();
+    }
+
+    [Command]
+    void CmdSearchGame()
+    {
+        if(MainMenu.Instanse.SearchGame(gameObject,out matchID))
+        {
+            Debug.Log("Game is finding");
+            networkMatch.matchId = matchID.ToGuid();
+            TargetSearchGame(true, matchID);
+
+            if(isServer&&PlayerLobbyUI != null)
+            {
+                PlayerLobbyUI.SetActive(true);
+            }
+        }
+        else
+        {
+            Debug.Log("Game found not success");
+            TargetSearchGame(false, matchID);
+
+
+        }
+    }
+
+    [TargetRpc]
+    void TargetSearchGame(bool success, string ID)
+    {
+        matchID = ID;
+        Debug.Log("ID: " + matchID + "==" + ID + " | " + success);
+        MainMenu.Instanse.SearchGameSuccess(success, ID);
+    }
+
+    [Server]
+    public void PlayerCountUpdated(int playerCount)
+    {
+        TargetPlayerCountUpdated(playerCount);
+    }
+
+    [TargetRpc]
+    void TargetPlayerCountUpdated(int playerCount)
+    {
+        if (playerCount > 1)
+        {
+            MainMenu.Instanse.SetBeginButtonActive(true);
+        }
+        else
+        {
+            MainMenu.Instanse.SetBeginButtonActive(false);
+        }
+    }
 
     public void BeginGame()
     {
@@ -153,7 +283,14 @@ public class Player : NetworkBehaviour
     void TargetBeginGame()
     {
         Debug.Log($"ID {matchID} | Start");
-        DontDestroyOnLoad(gameObject);
+
+        Player[] players = FindObjectsOfType<Player>();
+        for(int i = 0; i < players.Length; i++)
+        {
+            DontDestroyOnLoad(players[i]);
+        }
+
+        GameUI.GetComponent<Canvas>().enabled = true;
         MainMenu.Instanse.InGame = true;
         transform.localScale = new Vector3(2, 2, 2);
         SceneManager.LoadScene("Game", LoadSceneMode.Additive);
@@ -177,6 +314,7 @@ public class Player : NetworkBehaviour
 
         if (_synchHealth <= 0)
         {
+            UIController.Instance.LoseScreenEnable();
             NetworkServer.Destroy(gameObject);
         }
     }
@@ -184,29 +322,47 @@ public class Player : NetworkBehaviour
     [Server]
     public void SpawnBullet(uint owner, Vector3 target)
     {
+        Debug.Log("SpawnBullet");
         GameObject bulletGO = Instantiate(BulletPrefab, transform.position, Quaternion.identity);
         NetworkServer.Spawn(bulletGO);
         bulletGO.GetComponent<Bullet>().Init(owner, target);
     }
 
-    [Server]
-    public void OutOfMap()
-    {
-        NetworkServer.Destroy(gameObject);
-    }
+    //[Server]
+    //public void OutOfMap()
+    //{
+    //    NetworkServer.Destroy(gameObject);
+    //}
 
 
-    [Command]
-    public void CmdOutOfMap()
-    {
-        OutOfMap();
-    }
+    //[Command]
+    //public void CmdOutOfMap()
+    //{
+    //    OutOfMap();
+    //}
 
     [Command]
     public void CmdSpawnBullet(uint owner, Vector3 target)
     {
-        SpawnBullet(owner, target);
+        Debug.Log("CmdSpawnBullet");
+
+        RpcSpawnBullet(owner, target);
+        //MainMenu.Instanse.SpawnFirebal(matchID,transform.position,owner,target);
+
+        //SpawnBullet(owner, target);
+        //GameObject bulletGO = Instantiate(BulletPrefab, transform.position, Quaternion.identity);
+        //NetworkServer.Spawn(bulletGO);
+        //bulletGO.GetComponent<Bullet>().Init(owner, target);
     }
+
+    [ClientRpc]
+    public void RpcSpawnBullet(uint owner, Vector3 target)
+    {
+        GameObject bulletGO = Instantiate(BulletPrefab, transform.position, Quaternion.identity);
+        //NetworkServer.Spawn(bulletGO);
+        bulletGO.GetComponent<Fireball>().Init(owner, target);
+    }
+
 
     [Command]
     public void CmdChangeHealth(int newValue)
@@ -214,7 +370,7 @@ public class Player : NetworkBehaviour
         ChangeHealthValue(newValue);
     }
 
-  
+    
 
 
     void Update()
@@ -222,9 +378,10 @@ public class Player : NetworkBehaviour
 
         if (isOwned)
         {
+            
             _anim = GetComponent<Animator>();
             #region Movement
-            float deltaX = Input.GetAxis("Horizontal") * speed * Time.deltaTime;
+            //float deltaX = Input.GetAxis("Horizontal") * speed * Time.deltaTime;
             Vector2 movement = new Vector2(deltaX, 0);
             transform.Translate(movement);
 
@@ -269,31 +426,60 @@ public class Player : NetworkBehaviour
                 Flip();
             }
 
-            if (Input.GetKeyDown(KeyCode.H))
+            if (_atackCD != 0)
             {
-                if (isServer)
-                {
-                    ChangeHealthValue(Health - 1);
-                }
-                else
-                {
-                    CmdChangeHealth(Health-1);
-                }
+                Debug.Log("CD: " + _atackCD);
+                _atackCD -= Time.deltaTime;
+            }
+            if(_atackCD < 0)
+            {
+                _atackCD = 0;
             }
 
-            if (Input.GetKeyDown(KeyCode.Mouse1))
-            {
-                Vector3 pos = Input.mousePosition;
-                pos.z = 10f;
-                pos = Camera.main.ScreenToWorldPoint(pos);
 
-                if (isServer)
-                    SpawnBullet(netId, pos);
-                else
-                    CmdSpawnBullet(netId, pos);
-            }
+            //if (Input.GetKeyDown(KeyCode.H))
+            //{
+            //    if (isServer)
+            //    {
+            //        ChangeHealthValue(Health - 1);
+            //    }
+            //    else
+            //    {
+            //        CmdChangeHealth(Health-1);
+            //    }
+            //}
 
-            
+            //if (Input.GetKeyDown(KeyCode.Mouse1))
+            //{
+            //    Debug.Log("Attack");
+            //    _anim.SetTrigger("Attack");
+            //    Vector3 pos = Input.mousePosition;
+            //    Debug.Log("Attack pos " + pos);
+            //    pos.z = 10f;
+            //    pos = Camera.main.ScreenToWorldPoint(pos);
+            //    Debug.Log("Attack pos after camera " + pos);
+
+            //    //CmdSpawnBullet(netId, pos);
+
+            //    //GameObject bulletGO = Instantiate(BulletPrefab, transform.position, Quaternion.identity);
+            //    //NetworkServer.Spawn(bulletGO);
+            //    //bulletGO.GetComponent<Bullet>().Init(netId, pos);
+            //    //bulletGO.GetComponent<Bullet>().Init(netId, pos);
+
+
+
+            //    if (isServer)
+            //    {
+            //        SpawnBullet(netId, pos);
+            //    }
+            //    else
+            //    {
+            //        CmdSpawnBullet(netId, pos);
+
+            //    }
+            //}
+
+
         }
         
 
@@ -311,34 +497,100 @@ public class Player : NetworkBehaviour
             Vector3 Scale = transform.localScale;
             Scale.x *= -1;
             transform.localScale = Scale;
-            Vector3 TextScale = NameDisplayText.transform.localScale;
-            TextScale.x *= -1;
-            NameDisplayText.transform.localScale = TextScale;
+            if (MainMenu.Instanse.InGame)
+            {
+                Vector3 TextScale = NameDisplayText.transform.localScale;
+                TextScale.x *= -1;
+                NameDisplayText.transform.localScale = TextScale; 
+            }
+            
         }
     }
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if(isOwned && collision.CompareTag("Out"))
+        MainMenu.Instanse.Disconect();
+        //if(isOwned && collision.CompareTag("Out"))
+        //{
+        //    if (isServer)
+        //    {
+        //        OutOfMap();
+        //    }
+        //    else
+        //    {
+        //        CmdOutOfMap();
+        //    }
+        //}
+    }
+
+    public void Jump()
+    {
+        //Debug.Log("Button");
+        
+        if (isOwned)
         {
-            if (isServer)
+            //Debug.Log("Jump");
+            Vector3 max = _box.bounds.max;
+            Vector3 min = _box.bounds.min;
+            Vector2 corner1 = new Vector2(max.x, min.y - .1f);
+            Vector2 corner2 = new Vector2(min.x, min.y - .2f);
+            Collider2D hit = Physics2D.OverlapArea(corner1, corner2);
+            _grounded = true;
+            if (hit == null)
             {
-                OutOfMap();
+                _grounded = false;
             }
-            else
+            if (_grounded)
             {
-                CmdOutOfMap();
+                _body.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
             }
         }
     }
 
-    //public void Jump()
-    //{
-    //    Debug.Log("Button");
-    //    //_jump = true;
-    //    if (/*_grounded && */isOwned)
-    //    {
-    //        Debug.Log("Jump");
-    //        _body.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
-    //    }
-    //}
+    public void Left()
+    {
+        float deltaX = -10 * speed * Time.deltaTime;
+        Vector2 movement = new Vector2(deltaX, 0);
+        transform.Translate(movement);
+        _isMoved = true;
+    }
+
+    public void Right()
+    {
+        float deltaX = 10 * speed * Time.deltaTime;
+        Vector2 movement = new Vector2(deltaX, 0);
+        transform.Translate(movement);
+        _isMoved = true;
+    }
+
+    public void Move(float move)
+    {
+        if (isOwned)
+        {
+            deltaX = move * speed * Time.deltaTime;        
+        }
+    }
+
+    public void Atack()
+    {
+        if (isOwned && _atackCD == 0)
+        {
+            if (deltaX != 0)
+            {
+                _anim.SetTrigger("Attack");
+            }
+            Vector3 pos = /*Vector3.forward*/transform.position;
+            if (_facingRight)
+            {
+                pos.x += 6f;
+            }
+            else
+            {
+                pos.x -= 6f;
+            }
+            pos.z = 10f;
+            _atackCD = 0.5f;
+            //pos = Camera.main.ScreenToWorldPoint(pos);
+            CmdSpawnBullet(netId, pos);
+        }
+    }
 }
