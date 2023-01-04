@@ -9,15 +9,27 @@ using System.Security.Cryptography;
 using System.Text;
 
 [System.Serializable]
-public class Match : NetworkBehaviour
+public class Match
 {
     public string ID;
-    public readonly List<GameObject> players = new List<GameObject>();
+    public bool PublicMatch;
+    public bool InMatch;
+    public bool MatchFull;
 
-    public Match(string ID, GameObject player)
+    public List<GameObject> players = new List<GameObject>();
+
+    public Match(string ID, GameObject player, bool publicMatch)
     {
+        InMatch = false;
+        MatchFull = false;
         this.ID = ID;
+        PublicMatch = publicMatch;
         players.Add(player);
+    }
+
+    public Match()
+    {
+
     }
 }
 
@@ -28,14 +40,15 @@ public class MainMenu : NetworkBehaviour
     public static MainMenu Instanse;
     public readonly SyncList<Match> matches = new SyncList<Match>();
     public readonly SyncList<string> matcheIDs = new SyncList<string>();
+    public int MaxPlayers;
     private NetworkManager _networkManager;
 
     [Header("MainMenu")]
     public TMP_InputField JoinInput;
-    public Button HostButtom;
-    public Button JoinButtom;
-    public Button ChangeNameButton;
+    public Button[] buttons;
     public Canvas LobbyCanvas;
+    public Canvas SearchCanvas;
+    private bool _searching;
 
     [Header("Name")]
     public GameObject ChangeNamePanel;
@@ -52,8 +65,26 @@ public class MainMenu : NetworkBehaviour
     public GameObject UIPlayerPrefab;
     public TMP_Text IDText;
     public Button BeginGameButton;
-    public GameObject TurnManager;
+    public GameObject localPlayerLobbyUI;
     public bool InGame;
+
+
+    [Header("Error")]
+    public GameObject ErrorPanel;
+    public TMP_Text ErrorText;
+
+    [Header("Character")]
+    public Button ChooseButton;
+    public Transform PreviewParent;
+    public TMP_Text NameText;
+    public List<Character> Characters;
+    public TMP_Text CoinsText;
+    public int ChangeNameCost;
+    public int Coins;
+    private int index;
+    private List<GameObject> previewCharacters = new List<GameObject>();
+
+    public GameObject Fireball;
 
     private void Start()
     {
@@ -62,6 +93,64 @@ public class MainMenu : NetworkBehaviour
         _networkManager = FindObjectOfType<NetworkManager>();
 
         FirstTime = PlayerPrefs.GetInt("FirstTime", 1);
+        Coins = PlayerPrefs.GetInt("Coins", Coins);
+
+
+        if (PlayerPrefs.HasKey("index"))
+        {
+            index = PlayerPrefs.GetInt("index");
+        }
+
+        foreach(var character in Characters)
+        {
+            GameObject previewCharacter = Instantiate(character.PreviewObj, PreviewParent);
+            previewCharacter.SetActive(false);
+            previewCharacters.Add(previewCharacter);
+        }
+
+        if (index == PlayerPrefs.GetInt("index"))
+        {
+            ChooseButton.GetComponent<Image>().color = Color.white;
+            ChooseButton.interactable = false;
+            ChooseButton.GetComponentInChildren<TMP_Text>().text = "Chosen";
+        }
+        else
+        {
+            if (Characters[index].purchased == 0)
+            {
+                ChooseButton.interactable = true;
+                ChooseButton.GetComponentInChildren<TMP_Text>().text = Characters[index].Cost + "C";
+
+                if (Coins >= Characters[index].Cost)
+                {
+                    ChooseButton.GetComponent<Image>().color = Color.green;
+                }
+                else
+                {
+                    ChooseButton.GetComponent<Image>().color = Color.red;
+                }
+            }
+            else
+            {
+                ChooseButton.GetComponent<Image>().color = Color.white;
+                ChooseButton.interactable = true;
+                ChooseButton.GetComponentInChildren<TMP_Text>().text = "Choose";
+            }
+
+        }
+        previewCharacters[index].SetActive(true);
+        NameText.text = Characters[index].Name;
+        Characters[0].purchased = 1;
+        
+
+        for(int i = 0; i < Characters.Count; i++)
+        {
+            if (PlayerPrefs.HasKey("purchased" + i))
+            {
+                Characters[i].purchased = PlayerPrefs.GetInt("purchased" + i);
+            }
+        }
+
 
         if (!PlayerPrefs.HasKey("Name"))
         {
@@ -86,42 +175,198 @@ public class MainMenu : NetworkBehaviour
 
             if (FirstTime == 1)
             {
+                JoinInput.interactable = false;
+                for (int i = 0; i < buttons.Length; i++)
+                {
+                    buttons[i].interactable = false;
+                }
                 ChangeNamePanel.SetActive(true);
                 CloseButton.SetActive(false);
             }
             else
             {
+                SetNameButton.GetComponentInChildren<TMP_Text>().text = ChangeNameCost + "C";
                 CloseButton.SetActive(true);
+
+                if (Coins >= ChangeNameCost)
+                {
+                    SetNameButton.GetComponent<Image>().color = Color.green;
+                }
+                else
+                {
+                    SetNameButton.GetComponent<Image>().color = Color.red;
+                }
             }
-            if (PlayerPrefs.HasKey("Name"))
-            {
-                FirstTime = 0;
-            }
-            PlayerPrefs.SetInt("FirstTime", FirstTime);
+            //if (PlayerPrefs.HasKey("Name"))
+            //{
+            //    FirstTime = 0;
+            //}
+            CoinsText.text = Coins + "C";
+
+            PlayerPrefs.SetInt("Coins", Coins);
         }
     }
 
     public void SetName(string name)
     {
-        SetNameButton.interactable = !string.IsNullOrEmpty(name);
+
+        //SetNameButton.interactable = true;
+
+        if (name == DisplayName || string.IsNullOrEmpty(name))
+        {
+            Debug.Log("true");
+            SetNameButton.interactable = false;
+        }
+        else
+        {
+            Debug.Log("false");
+            SetNameButton.interactable = true;
+        }
     }
 
     public void SaveName()
     {
-        JoinInput.interactable = false;
-        HostButtom.interactable = false;
-        JoinButtom.interactable = false;
-        ChangeNameButton.interactable = false;
+        if (FirstTime == 0)
+        {
+            if (Coins >= ChangeNameCost)
+            {
+                Coins -= ChangeNameCost;
+                JoinInput.interactable = false;
+                for (int i = 0; i < buttons.Length; i++)
+                {
+                    buttons[i].interactable = false;
+                }
 
-        FirstTime = 0;
+                FirstTime = 0;
 
-        ChangeNamePanel.SetActive(false);
-        DisplayName = NameInput.text;
-        PlayerPrefs.SetString("Name", DisplayName);
-        Invoke(nameof(Disconect), 1f);
+                ChangeNamePanel.SetActive(false);
+                DisplayName = NameInput.text;
+                PlayerPrefs.SetInt("FirstTime", FirstTime);
+                PlayerPrefs.SetString("Name", DisplayName);
+                Invoke(nameof(Disconect), 1f);
+            }
+            else
+            {
+                JoinInput.interactable = false;
+                for (int i = 0; i < buttons.Length; i++)
+                {
+                    buttons[i].interactable = false;
+                }
+                ErrorPanel.SetActive(true);
+                ErrorText.text = "Not enough money";
+            }
+        }
+        else
+        {
+            ChangeNamePanel.SetActive(false);
+            JoinInput.interactable = false;
+            for (int i = 0; i < buttons.Length; i++)
+            {
+                buttons[i].interactable = false;
+            }
+
+            FirstTime = 0;
+
+            DisplayName = NameInput.text;
+            PlayerPrefs.SetInt("FirstTime", FirstTime);
+            PlayerPrefs.SetString("Name", DisplayName);
+            Invoke(nameof(Disconect), 1f);
+        }    
     }
 
-    void Disconect()
+    public void Choose()
+    {
+        if (Characters[index].purchased == 0)
+        {
+            if (Coins >= Characters[index].Cost)
+            {
+                Coins -= Characters[index].Cost;
+                Characters[index].purchased = 1;
+                PlayerPrefs.SetInt("purchased" + index, Characters[index].purchased);
+                PlayerPrefs.SetInt("index", index);
+                JoinInput.interactable = false;
+                for (int i = 0; i < buttons.Length; i++)
+                {
+                    buttons[i].interactable = false;
+                }
+                Invoke(nameof(Disconect), 1f);
+            }
+            else
+            {
+                JoinInput.interactable = false;
+                for (int i = 0; i < buttons.Length; i++)
+                {
+                    buttons[i].interactable = false;
+                }
+                ErrorPanel.SetActive(true);
+                ErrorText.text = "Not enough money";
+            }
+        }
+        else
+        {
+            PlayerPrefs.SetInt("index", index);
+            JoinInput.interactable = false;
+            for (int i = 0; i < buttons.Length; i++)
+            {
+                buttons[i].interactable = false;
+            }
+            Invoke(nameof(Disconect), 1f);
+        }
+        
+    }
+
+    public void ChangeIndex(bool previous)
+    {
+        previewCharacters[index].SetActive(false);
+
+        if (!previous)
+        {
+            index = (index + 1) % previewCharacters.Count;
+        }
+        else
+        {
+            index--;
+            if (index < 0)
+            {
+                index += previewCharacters.Count;
+            }
+        }
+
+        if (index == PlayerPrefs.GetInt("index"))
+        {
+            ChooseButton.GetComponent<Image>().color = Color.white;
+            ChooseButton.interactable = false;
+            ChooseButton.GetComponentInChildren<TMP_Text>().text = "Chosen";
+        }
+        else
+        {
+            if (Characters[index].purchased == 0)
+            {
+                ChooseButton.interactable = true;
+                ChooseButton.GetComponentInChildren<TMP_Text>().text = Characters[index].Cost + "C";
+
+                if(Coins >= Characters[index].Cost)
+                {
+                    ChooseButton.GetComponent<Image>().color = Color.green;
+                }
+                else
+                {
+                    ChooseButton.GetComponent<Image>().color = Color.red;
+                }
+            }
+            else
+            {
+                ChooseButton.GetComponent<Image>().color = Color.white;
+                ChooseButton.interactable = true;
+                ChooseButton.GetComponentInChildren<TMP_Text>().text = "Choose";
+            }
+            
+        }
+        previewCharacters[index].SetActive(true);
+        NameText.text = Characters[index].Name;
+    }
+
+    public void Disconect()
     {
         if (_networkManager.mode == NetworkManagerMode.Host)
         {
@@ -133,14 +378,20 @@ public class MainMenu : NetworkBehaviour
         }
     }
 
-    public void Host()
+    public void SetBeginButtonActive(bool active)
+    {
+        BeginGameButton.interactable = active;
+    }
+
+    public void Host(bool publicHost)
     {
         JoinInput.interactable = false;
-        HostButtom.interactable = false;
-        JoinButtom.interactable = false;
-        ChangeNameButton.interactable = false;
+        for (int i = 0; i < buttons.Length; i++)
+        {
+            buttons[i].interactable = false;
+        }
 
-        Player.localPlayer.HostGame();
+        Player.localPlayer.HostGame(publicHost);
     }
 
     public void HostSuccess(bool success, string matchID)
@@ -149,16 +400,19 @@ public class MainMenu : NetworkBehaviour
         {
             LobbyCanvas.enabled = true;
 
-            SpawnPlayerUIPrefab(Player.localPlayer);
+            if(localPlayerLobbyUI != null)
+            {
+                Destroy(localPlayerLobbyUI);
+            }
+
+            localPlayerLobbyUI = SpawnPlayerUIPrefab(Player.localPlayer);
             IDText.text = matchID;
             BeginGameButton.interactable = true;
         }
         else
         {
-            JoinInput.interactable = true;
-            HostButtom.interactable = true;
-            JoinButtom.interactable = true;
-            ChangeNameButton.interactable = true;
+            ErrorPanel.SetActive(true);
+            ErrorText.text = "Create lobby is fault";
 
         }
     }
@@ -166,9 +420,10 @@ public class MainMenu : NetworkBehaviour
     public void Join()
     {
         JoinInput.interactable = false;
-        HostButtom.interactable = false;
-        JoinButtom.interactable = false;
-        ChangeNameButton.interactable = false;
+        for (int i = 0; i < buttons.Length; i++)
+        {
+            buttons[i].interactable = false;
+        }
 
 
         Player.localPlayer.JoinGame(JoinInput.text.ToUpper());
@@ -180,26 +435,57 @@ public class MainMenu : NetworkBehaviour
         {
             LobbyCanvas.enabled = true;
 
-            SpawnPlayerUIPrefab(Player.localPlayer);
+            if (localPlayerLobbyUI != null)
+            {
+                Destroy(localPlayerLobbyUI);
+            }
+
+            localPlayerLobbyUI = SpawnPlayerUIPrefab(Player.localPlayer);
             IDText.text = matchID;
             BeginGameButton.interactable = false;
         }
         else
         {
-            JoinInput.interactable = true;
-            HostButtom.interactable = true;
-            JoinButtom.interactable = true;
-            ChangeNameButton.interactable = true;
+            ErrorPanel.SetActive(true);
+            ErrorText.text = "Can not found ID";
 
         }
     }
 
-    public bool HostGame(string matchID, GameObject player)
+    public void Enable()
+    {
+        ErrorPanel.SetActive(false);
+        for(int i = 0; i < buttons.Length; i++)
+        {
+            buttons[i].interactable = true;
+        }
+        JoinInput.interactable = true;
+    }
+
+    public void DisconnectGame()
+    {
+        if (localPlayerLobbyUI != null)
+        {
+            Destroy(localPlayerLobbyUI);
+        }
+
+        Player.localPlayer.DisconnectGame();
+        LobbyCanvas.enabled = false;
+        JoinInput.interactable = true;
+        for (int i = 0; i < buttons.Length; i++)
+        {
+            buttons[i].interactable = true;
+        }
+    }
+
+    public bool HostGame(string matchID, GameObject player, bool publicMatch)
     {
         if (!matcheIDs.Contains(matchID))
         {
             matcheIDs.Add(matchID);
-            matches.Add(new Match(matchID, player));
+            Match match = new Match(matchID, player, publicMatch);
+            matches.Add(match);
+            player.GetComponent<Player>().CurrentMatch = match;
             return true;
         }
         else
@@ -216,8 +502,21 @@ public class MainMenu : NetworkBehaviour
             {
                 if (matches[i].ID == matchID)
                 {
-                    matches[i].players.Add(player);
-                    break;
+                    if (!matches[i].InMatch && !matches[i].MatchFull)
+                    {
+                        matches[i].players.Add(player);
+                        player.GetComponent<Player>().CurrentMatch = matches[i];
+                        matches[i].players[0].GetComponent<Player>().PlayerCountUpdated(matches[i].players.Count);
+                        if (matches[i].players.Count == MaxPlayers)
+                        {
+                            matches[i].MatchFull = true;
+                        }
+                        break;
+                    }
+                    else
+                    {
+                        return false;
+                    }
                 }
             }
             return true;
@@ -226,6 +525,26 @@ public class MainMenu : NetworkBehaviour
         {
             return false;
         }
+    }
+
+    public bool SearchGame(GameObject player, out string ID)
+    {
+        ID = "";
+
+        for (int i = 0; i < matches.Count; i++)
+        {
+            Debug.Log("Check ID " + matches[i].ID + " | in game " + matches[i].InMatch + " | full lobby " + matches[i].MatchFull + " | public lobby " + matches[i].PublicMatch);
+            if (!matches[i].InMatch && !matches[i].MatchFull && matches[i].PublicMatch)
+            {
+                if (JoinGame(matches[i].ID, player))
+                {
+                    ID = matches[i].ID;
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     public static string GetRandomId()
@@ -246,10 +565,12 @@ public class MainMenu : NetworkBehaviour
         return ID;
     } 
 
-    public void SpawnPlayerUIPrefab(Player player)
+    public GameObject SpawnPlayerUIPrefab(Player player)
     {
         GameObject newUIPlayer = Instantiate(UIPlayerPrefab, UILayerParent);
         newUIPlayer.GetComponent<PlayerUI>().SetPlayer(player.PlayerDisplayName);
+
+        return newUIPlayer;
     }
 
     public void StartGame()
@@ -257,26 +578,109 @@ public class MainMenu : NetworkBehaviour
         Player.localPlayer.BeginGame();
     }
 
+    public void SearchGame()
+    {
+        StartCoroutine(Searching());
+    }
+
+    public void CancelSearchGame()
+    {
+        JoinInput.interactable = true;
+        for (int i = 0; i < buttons.Length; i++)
+        {
+            buttons[i].interactable = true;
+        }
+
+        _searching = false;
+    }
+
+    public void SearchGameSuccess(bool success, string ID)
+    {
+        if (success)
+        {
+            SearchCanvas.enabled = false;
+            _searching = false;
+            JoinSuccess(success, ID);
+        }
+    }
+
     public void BeginGame(string matchID)
     {
-        GameObject newTurnManager = Instantiate(TurnManager);
-        NetworkServer.Spawn(newTurnManager);
-        newTurnManager.GetComponent<NetworkMatch>().matchId = matchID.ToGuid();
-        TurnManager turnManager = newTurnManager.GetComponent<TurnManager>();
-
         for(int i = 0; i < matches.Count; i++)
         {
             if (matches[i].ID == matchID)
             {
+                matches[i].InMatch = true;
                 foreach(var player in matches[i].players)
                 {
-                    Player player1 = player.GetComponent<Player>();
-                    turnManager.AddPlayer(player1);
-                    player1.StartGame();
+                    player.GetComponent<Player>().StartGame();
                 }
                 break;
             }
         }
+    }
+
+    public void PlayerDisconnected(GameObject player, string ID)
+    {
+        for (int i = 0; i < matches.Count; i++)
+        {
+            if (matches[i].ID == ID)
+            {
+                int playerIndex = matches[i].players.IndexOf(player);
+                if (matches[i].players.Count > playerIndex)
+                {
+                    matches[i].players.RemoveAt(playerIndex);
+                }
+
+                if (matches[i].players.Count == 0)
+                {
+                    matches.RemoveAt(i);
+                    matcheIDs.Remove(ID);
+                }
+                else
+                {
+                    matches[i].players[0].GetComponent<Player>().PlayerCountUpdated(matches[i].players.Count);
+                }
+                break;
+            }
+        }
+    }
+
+    IEnumerator Searching()
+    {
+        JoinInput.interactable = false;
+        for (int i = 0; i < buttons.Length; i++)
+        {
+            buttons[i].interactable = false;
+        }
+        SearchCanvas.enabled = true;
+        _searching = true;
+
+        float searchInterval = 1;
+        float currentTime = 1;
+
+        while (_searching)
+        {
+            if (currentTime > 0)
+            {
+                currentTime -= Time.deltaTime;
+            }
+            else
+            {
+                currentTime = searchInterval;
+                Player.localPlayer.SearchGame();
+            }
+            yield return null;
+        }
+        SearchCanvas.enabled = false;
+    }
+
+    public void SpawnFirebal(string matchID, Vector3 pos, uint owner, Vector3 target)
+    {
+        GameObject newFireBall = Instantiate(Fireball,pos,Quaternion.identity);
+        NetworkServer.Spawn(newFireBall);
+        newFireBall.GetComponent<NetworkMatch>().matchId = matchID.ToGuid();
+        newFireBall.GetComponent<Bullet>().Init(owner, target);
     }
 }
 
@@ -290,4 +694,18 @@ public static class MatchExtention
 
         return new Guid(hasBytes);
     }
+}
+
+[System.Serializable]
+public class Character
+{
+    public string Name;
+    public GameObject PreviewObj;
+    public int ColorKode;
+
+    [Space(5)]
+    public int Cost;
+
+    [HideInInspector] public int purchased;
+    
 }

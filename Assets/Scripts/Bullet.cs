@@ -17,20 +17,66 @@ public class Bullet : NetworkBehaviour
         this.owner = owner;
         this.target = target;
         inited = true;
+        Debug.Log("BulletInit");
     }
+
+    [Command]
+    public void CmdInit(uint owner, Vector3 target)
+    {
+        Debug.Log("BulletCmdInit");
+
+        Init(owner, target);
+        //this.owner = owner;
+        //this.target = target;
+        //inited = true;
+
+    }
+
+    //[Command]
+    //public void CmdFireballMove()
+    //{
+    //    RpcFireballMove();
+    //}
+
+    //[ClientRpc]
+    //public void RpcFireballMove()
+    //{
+    //    Debug.Log("Bullet update");
+    //    transform.Translate((target - transform.position).normalized /*0.04f*/ * Time.deltaTime * BulletSpeed);
+
+    //    foreach (var item in Physics2D.OverlapCircleAll(transform.position, 0.5f))
+    //    {
+    //        Player player = item.GetComponent<Player>();
+    //        if (player)
+    //        {
+    //            if (player.netId != owner)
+    //            {
+    //                player.ChangeHealthValue(player.Health - 1);
+    //                NetworkServer.Destroy(gameObject);
+    //            }
+    //        }
+    //    }
+
+    //    if (Vector3.Distance(transform.position, target) < 0.1f)
+    //    {
+    //        NetworkServer.Destroy(gameObject);
+    //    }
+    //}
 
     private void Update()
     {
-        if(inited && isServer)
+        if (inited && isServer) 
         {
+            
             transform.Translate((target - transform.position).normalized /*0.04f*/ * Time.deltaTime * BulletSpeed);
 
-            foreach(var item in Physics2D.OverlapCircleAll(transform.position, 0.5f))
+            foreach (var item in Physics2D.OverlapCircleAll(transform.position, 0.5f))
             {
+                //Debug.Log("Overplap items: " + item.name);
                 Player player = item.GetComponent<Player>();
                 if (player)
                 {
-                    if(player.netId != owner)
+                    if (player.netId != owner)
                     {
                         player.ChangeHealthValue(player.Health - 1);
                         NetworkServer.Destroy(gameObject);
@@ -38,10 +84,34 @@ public class Bullet : NetworkBehaviour
                 }
             }
 
-            if(Vector3.Distance(transform.position, target) < 0.1f)
+            if (Vector3.Distance(transform.position, target) < 0.1f)
             {
                 NetworkServer.Destroy(gameObject);
             }
         }
     }
+
+    //private void OnTriggerEnter2D(Collider2D collision)
+    //{
+    //    Debug.Log("Trigger enter: " + collision.name);
+    //    Player player = collision.GetComponent<Player>();
+    //    Debug.Log("Player: " + player.netId);
+    //    Debug.Log("Owner player: " + owner);
+
+    //    //if(inited)
+    //    //{
+    //    //    Player player = collision.GetComponent<Player>();
+    //    //    if (player)
+    //    //    {
+    //    //        if (player.netId != owner)
+    //    //        {
+    //    //            player.ChangeHealthValue(player.Health - 1);
+    //    //            NetworkServer.Destroy(gameObject);
+    //    //        }
+    //    //    }
+    //    //}    
+    //}
+
+
+
 }
