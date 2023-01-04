@@ -117,7 +117,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 1
   m_Sprite: {fileID: -5901385224981945637, guid: f22ccb658a1179743859f60874cbefff, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
@@ -222,6 +222,7 @@ MonoBehaviour:
     players: []
   PlayerLobbyUI: {fileID: 0}
   NameDisplayText: {fileID: 3735646748026413862}
+  CharacterColor: {fileID: 1439737907258461197}
   BulletPrefab: {fileID: 4342482102357635251, guid: 211d26c5b6b79cf4abbbb8a7dc6e42e6, type: 3}
   jumpForce: 10
   Health: 5

@@ -73,6 +73,14 @@ public class MainMenu : NetworkBehaviour
     public GameObject ErrorPanel;
     public TMP_Text ErrorText;
 
+    [Header("Character")]
+    public Button ChooseButton;
+    public Transform PreviewParent;
+    public TMP_Text NameText;
+    public List<Character> Characters;
+    private int index;
+    private List<GameObject> previewCharacters = new List<GameObject>();
+
     public GameObject Fireball;
 
     private void Start()
@@ -82,6 +90,47 @@ public class MainMenu : NetworkBehaviour
         _networkManager = FindObjectOfType<NetworkManager>();
 
         FirstTime = PlayerPrefs.GetInt("FirstTime", 1);
+
+
+        if (PlayerPrefs.HasKey("index"))
+        {
+            index = PlayerPrefs.GetInt("index");
+        }
+
+        foreach(var character in Characters)
+        {
+            GameObject previewCharacter = Instantiate(character.PreviewObj, PreviewParent);
+            previewCharacter.SetActive(false);
+            previewCharacters.Add(previewCharacter);
+        }
+
+        //if (index == PlayerPrefs.GetInt("index"))
+        //{
+        //    ChooseButton.interactable = false;
+        //    ChooseButton.GetComponentInChildren<TMP_Text>().text = "Chosen";
+        //}
+        //else
+        //{
+        //    ChooseButton.interactable = true;
+        //    ChooseButton.GetComponentInChildren<TMP_Text>().text = "Choose";
+        //}
+        previewCharacters[index].SetActive(true);
+        NameText.text = Characters[index].Name;
+
+        if (FirstTime == 1)
+        {
+            JoinInput.interactable = false;
+            for (int i = 0; i < buttons.Length; i++)
+            {
+                buttons[i].interactable = false;
+            }
+            ChangeNamePanel.SetActive(true);
+            CloseButton.SetActive(false);
+        }
+        else
+        {
+            CloseButton.SetActive(true);
+        }
 
         if (!PlayerPrefs.HasKey("Name"))
         {
@@ -104,20 +153,25 @@ public class MainMenu : NetworkBehaviour
                 players[i].gameObject.transform.localScale = Vector3.zero;
             }
 
-            if (FirstTime == 1)
-            {
-                ChangeNamePanel.SetActive(true);
-                CloseButton.SetActive(false);
-            }
-            else
-            {
-                CloseButton.SetActive(true);
-            }
-            if (PlayerPrefs.HasKey("Name"))
-            {
-                FirstTime = 0;
-            }
-            PlayerPrefs.SetInt("FirstTime", FirstTime);
+            //if (FirstTime == 1)
+            //{
+            //    JoinInput.interactable = false;
+            //    for (int i = 0; i < buttons.Length; i++)
+            //    {
+            //        buttons[i].interactable = false;
+            //    }
+            //    ChangeNamePanel.SetActive(true);
+            //    CloseButton.SetActive(false);
+            //}
+            //else
+            //{
+            //    CloseButton.SetActive(true);
+            //}
+            //if (PlayerPrefs.HasKey("Name"))
+            //{
+            //    FirstTime = 0;
+            //}
+            
         }
     }
 
@@ -145,8 +199,51 @@ public class MainMenu : NetworkBehaviour
 
         ChangeNamePanel.SetActive(false);
         DisplayName = NameInput.text;
+        PlayerPrefs.SetInt("FirstTime", FirstTime);
         PlayerPrefs.SetString("Name", DisplayName);
         Invoke(nameof(Disconect), 1f);
+    }
+
+    public void Choose()
+    {
+        PlayerPrefs.SetInt("index", index);
+        JoinInput.interactable = false;
+        for (int i = 0; i < buttons.Length; i++)
+        {
+            buttons[i].interactable = false;
+        }
+        Invoke(nameof(Disconect), 1f);
+    }
+
+    public void ChangeIndex(bool previous)
+    {
+        previewCharacters[index].SetActive(false);
+
+        if (!previous)
+        {
+            index = (index + 1) % previewCharacters.Count;
+        }
+        else
+        {
+            index--;
+            if (index < 0)
+            {
+                index += previewCharacters.Count;
+            }
+        }
+
+        if (index == PlayerPrefs.GetInt("index"))
+        {
+            ChooseButton.interactable = false;
+            ChooseButton.GetComponentInChildren<TMP_Text>().text = "Chosen";
+        }
+        else
+        {
+            ChooseButton.interactable = true;
+            ChooseButton.GetComponentInChildren<TMP_Text>().text = "Choose";
+        }
+        previewCharacters[index].SetActive(true);
+        NameText.text = Characters[index].Name;
     }
 
     public void Disconect()
@@ -477,4 +574,14 @@ public static class MatchExtention
 
         return new Guid(hasBytes);
     }
+}
+
+[System.Serializable]
+public class Character
+{
+    public string Name;
+    public GameObject PreviewObj;
+    public int ColorKode;
+    public Sprite[] Sprites;
+    
 }
