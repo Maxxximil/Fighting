@@ -69,9 +69,20 @@ public class MainMenu : NetworkBehaviour
     public bool InGame;
 
 
-    [Header("Lobby")]
+    [Header("Error")]
     public GameObject ErrorPanel;
     public TMP_Text ErrorText;
+
+    [Header("Character")]
+    public Button ChooseButton;
+    public Transform PreviewParent;
+    public TMP_Text NameText;
+    public List<Character> Characters;
+    public TMP_Text CoinsText;
+    public int ChangeNameCost;
+    public int Coins;
+    private int index;
+    private List<GameObject> previewCharacters = new List<GameObject>();
 
     public GameObject Fireball;
 
@@ -82,6 +93,64 @@ public class MainMenu : NetworkBehaviour
         _networkManager = FindObjectOfType<NetworkManager>();
 
         FirstTime = PlayerPrefs.GetInt("FirstTime", 1);
+        Coins = PlayerPrefs.GetInt("Coins", Coins);
+
+
+        if (PlayerPrefs.HasKey("index"))
+        {
+            index = PlayerPrefs.GetInt("index");
+        }
+
+        foreach(var character in Characters)
+        {
+            GameObject previewCharacter = Instantiate(character.PreviewObj, PreviewParent);
+            previewCharacter.SetActive(false);
+            previewCharacters.Add(previewCharacter);
+        }
+
+        if (index == PlayerPrefs.GetInt("index"))
+        {
+            ChooseButton.GetComponent<Image>().color = Color.white;
+            ChooseButton.interactable = false;
+            ChooseButton.GetComponentInChildren<TMP_Text>().text = "Chosen";
+        }
+        else
+        {
+            if (Characters[index].purchased == 0)
+            {
+                ChooseButton.interactable = true;
+                ChooseButton.GetComponentInChildren<TMP_Text>().text = Characters[index].Cost + "C";
+
+                if (Coins >= Characters[index].Cost)
+                {
+                    ChooseButton.GetComponent<Image>().color = Color.green;
+                }
+                else
+                {
+                    ChooseButton.GetComponent<Image>().color = Color.red;
+                }
+            }
+            else
+            {
+                ChooseButton.GetComponent<Image>().color = Color.white;
+                ChooseButton.interactable = true;
+                ChooseButton.GetComponentInChildren<TMP_Text>().text = "Choose";
+            }
+
+        }
+        previewCharacters[index].SetActive(true);
+        NameText.text = Characters[index].Name;
+        Characters[0].purchased = 1;
+        
+
+        for(int i = 0; i < Characters.Count; i++)
+        {
+            if (PlayerPrefs.HasKey("purchased" + i))
+            {
+                Characters[i].purchased = PlayerPrefs.GetInt("purchased" + i);
+            }
+        }
+
 
         if (!PlayerPrefs.HasKey("Name"))
         {
@@ -106,47 +175,195 @@ public class MainMenu : NetworkBehaviour
 
             if (FirstTime == 1)
             {
+                JoinInput.interactable = false;
+                for (int i = 0; i < buttons.Length; i++)
+                {
+                    buttons[i].interactable = false;
+                }
                 ChangeNamePanel.SetActive(true);
                 CloseButton.SetActive(false);
             }
             else
             {
+                SetNameButton.GetComponentInChildren<TMP_Text>().text = ChangeNameCost + "C";
                 CloseButton.SetActive(true);
+
+                if (Coins >= ChangeNameCost)
+                {
+                    SetNameButton.GetComponent<Image>().color = Color.green;
+                }
+                else
+                {
+                    SetNameButton.GetComponent<Image>().color = Color.red;
+                }
             }
-            if (PlayerPrefs.HasKey("Name"))
-            {
-                FirstTime = 0;
-            }
-            PlayerPrefs.SetInt("FirstTime", FirstTime);
+            //if (PlayerPrefs.HasKey("Name"))
+            //{
+            //    FirstTime = 0;
+            //}
+            CoinsText.text = Coins + "C";
+
+            PlayerPrefs.SetInt("Coins", Coins);
         }
     }
 
     public void SetName(string name)
     {
-        if (name == DisplayName || !string.IsNullOrEmpty(name))
+
+        //SetNameButton.interactable = true;
+
+        if (name == DisplayName || string.IsNullOrEmpty(name))
         {
+            Debug.Log("true");
             SetNameButton.interactable = false;
         }
         else
         {
+            Debug.Log("false");
             SetNameButton.interactable = true;
         }
     }
 
     public void SaveName()
     {
-        JoinInput.interactable = false;
-        for(int i = 0; i < buttons.Length; i++)
+        if (FirstTime == 0)
         {
-            buttons[i].interactable = false;
+            if (Coins >= ChangeNameCost)
+            {
+                Coins -= ChangeNameCost;
+                JoinInput.interactable = false;
+                for (int i = 0; i < buttons.Length; i++)
+                {
+                    buttons[i].interactable = false;
+                }
+
+                FirstTime = 0;
+
+                ChangeNamePanel.SetActive(false);
+                DisplayName = NameInput.text;
+                PlayerPrefs.SetInt("FirstTime", FirstTime);
+                PlayerPrefs.SetString("Name", DisplayName);
+                Invoke(nameof(Disconect), 1f);
+            }
+            else
+            {
+                JoinInput.interactable = false;
+                for (int i = 0; i < buttons.Length; i++)
+                {
+                    buttons[i].interactable = false;
+                }
+                ErrorPanel.SetActive(true);
+                ErrorText.text = "Not enough money";
+            }
+        }
+        else
+        {
+            ChangeNamePanel.SetActive(false);
+            JoinInput.interactable = false;
+            for (int i = 0; i < buttons.Length; i++)
+            {
+                buttons[i].interactable = false;
+            }
+
+            FirstTime = 0;
+
+            DisplayName = NameInput.text;
+            PlayerPrefs.SetInt("FirstTime", FirstTime);
+            PlayerPrefs.SetString("Name", DisplayName);
+            Invoke(nameof(Disconect), 1f);
+        }    
+    }
+
+    public void Choose()
+    {
+        if (Characters[index].purchased == 0)
+        {
+            if (Coins >= Characters[index].Cost)
+            {
+                Coins -= Characters[index].Cost;
+                Characters[index].purchased = 1;
+                PlayerPrefs.SetInt("purchased" + index, Characters[index].purchased);
+                PlayerPrefs.SetInt("index", index);
+                JoinInput.interactable = false;
+                for (int i = 0; i < buttons.Length; i++)
+                {
+                    buttons[i].interactable = false;
+                }
+                Invoke(nameof(Disconect), 1f);
+            }
+            else
+            {
+                JoinInput.interactable = false;
+                for (int i = 0; i < buttons.Length; i++)
+                {
+                    buttons[i].interactable = false;
+                }
+                ErrorPanel.SetActive(true);
+                ErrorText.text = "Not enough money";
+            }
+        }
+        else
+        {
+            PlayerPrefs.SetInt("index", index);
+            JoinInput.interactable = false;
+            for (int i = 0; i < buttons.Length; i++)
+            {
+                buttons[i].interactable = false;
+            }
+            Invoke(nameof(Disconect), 1f);
+        }
+        
+    }
+
+    public void ChangeIndex(bool previous)
+    {
+        previewCharacters[index].SetActive(false);
+
+        if (!previous)
+        {
+            index = (index + 1) % previewCharacters.Count;
+        }
+        else
+        {
+            index--;
+            if (index < 0)
+            {
+                index += previewCharacters.Count;
+            }
         }
 
-        FirstTime = 0;
+        if (index == PlayerPrefs.GetInt("index"))
+        {
+            ChooseButton.GetComponent<Image>().color = Color.white;
+            ChooseButton.interactable = false;
+            ChooseButton.GetComponentInChildren<TMP_Text>().text = "Chosen";
+        }
+        else
+        {
+            if (Characters[index].purchased == 0)
+            {
+                ChooseButton.interactable = true;
+                ChooseButton.GetComponentInChildren<TMP_Text>().text = Characters[index].Cost + "C";
 
-        ChangeNamePanel.SetActive(false);
-        DisplayName = NameInput.text;
-        PlayerPrefs.SetString("Name", DisplayName);
-        Invoke(nameof(Disconect), 1f);
+                if(Coins >= Characters[index].Cost)
+                {
+                    ChooseButton.GetComponent<Image>().color = Color.green;
+                }
+                else
+                {
+                    ChooseButton.GetComponent<Image>().color = Color.red;
+                }
+            }
+            else
+            {
+                ChooseButton.GetComponent<Image>().color = Color.white;
+                ChooseButton.interactable = true;
+                ChooseButton.GetComponentInChildren<TMP_Text>().text = "Choose";
+            }
+            
+        }
+        previewCharacters[index].SetActive(true);
+        NameText.text = Characters[index].Name;
     }
 
     public void Disconect()
@@ -477,4 +694,18 @@ public static class MatchExtention
 
         return new Guid(hasBytes);
     }
+}
+
+[System.Serializable]
+public class Character
+{
+    public string Name;
+    public GameObject PreviewObj;
+    public int ColorKode;
+
+    [Space(5)]
+    public int Cost;
+
+    [HideInInspector] public int purchased;
+    
 }

@@ -21,7 +21,7 @@ public class Player : NetworkBehaviour
     public static Player localPlayer;
     public TMP_Text NameDisplayText;
 
-
+    public SpriteRenderer CharacterColor;
 
 
     public GameObject BulletPrefab;
@@ -93,6 +93,43 @@ public class Player : NetworkBehaviour
     {
         ServerDisconnect();
     }
+
+    [Command]
+    void CmdSendColor(int index)
+    {
+        RpcSendColor(index);
+    }
+
+    [ClientRpc]
+    void RpcSendColor(int index)
+    {
+        switch (index)
+        {
+            case 0:
+                CharacterColor.color = Color.white;
+                break;
+            case 1:
+                CharacterColor.color = Color.green;
+                break;
+            case 2:
+                CharacterColor.color = Color.red;
+                break;
+            case 3:
+                CharacterColor.color = Color.gray;
+                break;
+        }
+        
+    }
+
+    [Client]
+    void SendColor()
+    {
+        if (isLocalPlayer)
+        {
+            CmdSendColor(PlayerPrefs.GetInt("index"));
+        }
+    }
+
 
     [Command]
     public void CmdSendName(string name)
@@ -290,6 +327,7 @@ public class Player : NetworkBehaviour
             DontDestroyOnLoad(players[i]);
         }
 
+        SendColor();
         GameUI.GetComponent<Canvas>().enabled = true;
         MainMenu.Instanse.InGame = true;
         transform.localScale = new Vector3(2, 2, 2);
