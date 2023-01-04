@@ -256,6 +256,7 @@ MonoBehaviour:
   spawnPrefabs:
   - {fileID: 9011435500537728605, guid: 8c8c2b730e07ecc4397e1b59d9a76706, type: 3}
   - {fileID: 3891346027893421945, guid: c9949a42b4b7e7b41bccdbbc53bc7398, type: 3}
+  - {fileID: 4342482102357635251, guid: 211d26c5b6b79cf4abbbb8a7dc6e42e6, type: 3}
   timeInterpolationGui: 0
 --- !u!4 &130557330
 Transform:

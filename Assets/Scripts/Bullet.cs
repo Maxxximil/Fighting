@@ -68,11 +68,11 @@ public class Bullet : NetworkBehaviour
         if (inited && isServer) 
         {
             
-            Debug.Log("Bullet update");
             transform.Translate((target - transform.position).normalized /*0.04f*/ * Time.deltaTime * BulletSpeed);
 
             foreach (var item in Physics2D.OverlapCircleAll(transform.position, 0.5f))
             {
+                //Debug.Log("Overplap items: " + item.name);
                 Player player = item.GetComponent<Player>();
                 if (player)
                 {
@@ -91,5 +91,27 @@ public class Bullet : NetworkBehaviour
         }
     }
 
-    
+    //private void OnTriggerEnter2D(Collider2D collision)
+    //{
+    //    Debug.Log("Trigger enter: " + collision.name);
+    //    Player player = collision.GetComponent<Player>();
+    //    Debug.Log("Player: " + player.netId);
+    //    Debug.Log("Owner player: " + owner);
+
+    //    //if(inited)
+    //    //{
+    //    //    Player player = collision.GetComponent<Player>();
+    //    //    if (player)
+    //    //    {
+    //    //        if (player.netId != owner)
+    //    //        {
+    //    //            player.ChangeHealthValue(player.Health - 1);
+    //    //            NetworkServer.Destroy(gameObject);
+    //    //        }
+    //    //    }
+    //    //}    
+    //}
+
+
+
 }
