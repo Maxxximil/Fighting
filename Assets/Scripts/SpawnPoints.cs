@@ -4,8 +4,15 @@ using UnityEngine;
 
 public class SpawnPoints : MonoBehaviour
 {
-    private void Start()
+    private void Awake()
     {
+        SpawnPoints[] spawnPoints = FindObjectsOfType<SpawnPoints>();
+
+        if (spawnPoints.Length > 1)
+        {
+            Destroy(gameObject);
+        }
+
         DontDestroyOnLoad(gameObject);
     }
 }
