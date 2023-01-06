@@ -248,15 +248,13 @@ MonoBehaviour:
   offlineScene: Assets/Scenes/Offline.unity
   onlineScene: Assets/Scenes/Lobby.unity
   transport: {fileID: 130557327}
-  networkAddress: 192.168.1.105
+  networkAddress: localhost
   maxConnections: 4
   authenticator: {fileID: 0}
   playerPrefab: {fileID: 1439737907258461201, guid: 1e087faebdfd713478999061bd3e63fa, type: 3}
   autoCreatePlayer: 1
   playerSpawnMethod: 1
   spawnPrefabs:
-  - {fileID: 9011435500537728605, guid: 8c8c2b730e07ecc4397e1b59d9a76706, type: 3}
-  - {fileID: 3891346027893421945, guid: c9949a42b4b7e7b41bccdbbc53bc7398, type: 3}
   - {fileID: 4342482102357635251, guid: 211d26c5b6b79cf4abbbb8a7dc6e42e6, type: 3}
   timeInterpolationGui: 0
 --- !u!4 &130557330

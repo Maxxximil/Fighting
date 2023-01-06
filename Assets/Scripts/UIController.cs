@@ -9,8 +9,7 @@ public class UIController : MonoBehaviour
     public GameObject LoseScreen;
     public GameObject ControllButtons;
 
-
-
+   
     public void LoseScreenEnable()
     {
         ControllButtons.SetActive(false);

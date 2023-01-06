@@ -6,6 +6,7 @@ using Mirror;
 using TMPro;
 using UnityEngine.SceneManagement;
 using System;
+using UnityEngine.Events;
 
 public class Player : NetworkBehaviour
 {
@@ -45,7 +46,8 @@ public class Player : NetworkBehaviour
     private bool _isMoved = false;
     private float deltaX = 0;
     private float _atackCD = 0;
-
+    public int playersInLobby = 0;
+    private bool inGame = false;
     private void Awake()
     {
         networkMatch = GetComponent<NetworkMatch>();
@@ -58,6 +60,8 @@ public class Player : NetworkBehaviour
         _body = this.GetComponent<Rigidbody2D>();
         
         _box = GetComponent<BoxCollider2D>();
+
+        _synchHealth = Health;
 
 
         if (isLocalPlayer)
@@ -334,7 +338,7 @@ public class Player : NetworkBehaviour
         SceneManager.LoadScene("Game", LoadSceneMode.Additive);
         _facingRight = true;
         _body.simulated = true;
-
+        inGame = true;
     }
 
 
@@ -349,13 +353,83 @@ public class Player : NetworkBehaviour
     public void ChangeHealthValue(int newValue)
     {
         _synchHealth = newValue;
+        Debug.Log("New HP: " + _synchHealth);
 
         if (_synchHealth <= 0)
         {
-            UIController.Instance.LoseScreenEnable();
-            NetworkServer.Destroy(gameObject);
+            //_synchHealth = 0;
+            Debug.Log("0 hp");
+            TargetLoseGame();
+            //foreach(var match in MainMenu.Instanse.matches)
+            //{
+            //    Debug.Log("Count of Players: " + match.players.Count);
+            //}
+
         }
     }
+
+    [Server]
+    void CheckWin()
+    {
+        Player[] players = FindObjectsOfType<Player>();
+        playersInLobby = players.Length;
+        for (int i = 0; i < players.Length; i++)
+        {
+            if (players[i]._synchHealth == 0)
+            {
+                playersInLobby--;
+            }
+            Debug.Log("Player " + i + " HP: " + players[i]._synchHealth);
+        }
+        Debug.Log("Players in Loby: " + playersInLobby);
+        if (playersInLobby == 1)
+        {
+            for (int i = 0; i < players.Length; i++)
+            {
+
+                if (players[i]._synchHealth != 0)
+                {
+                    Debug.Log("Winner player number " + i);
+
+                    //RpcWinGame(players[i].netId);
+                    //MainMenu.Instanse.WinGame();
+                    NetworkIdentity playerIdentity = players[i].GetComponent<NetworkIdentity>();
+                    TargetWinGame(playerIdentity.connectionToClient);
+                }
+            }
+        }
+    }
+
+    [Command]
+    public void CmdCheckWin()
+    {
+        CheckWin();
+    }
+
+    [ClientRpc]
+    void RpcWinGame(uint i)
+    {
+        Debug.Log("(ClientRpc)Winner player number " + i);
+        MainMenu.Instanse.WinGame();
+    }
+
+
+    [TargetRpc]
+    void TargetWinGame(NetworkConnection target)
+    {
+        //UIController.Instance.LoseScreenEnable();
+        MainMenu.Instanse.WinGame();
+        //Debug.Log("Winner");
+    }
+
+    [TargetRpc]
+    void TargetLoseGame()
+    {
+        //UIController.Instance.LoseScreenEnable();
+        MainMenu.Instanse.LoseGame();
+    }
+
+
 
     [Server]
     public void SpawnBullet(uint owner, Vector3 target)
@@ -382,15 +456,7 @@ public class Player : NetworkBehaviour
     [Command]
     public void CmdSpawnBullet(uint owner, Vector3 target)
     {
-        Debug.Log("CmdSpawnBullet");
-
         RpcSpawnBullet(owner, target);
-        //MainMenu.Instanse.SpawnFirebal(matchID,transform.position,owner,target);
-
-        //SpawnBullet(owner, target);
-        //GameObject bulletGO = Instantiate(BulletPrefab, transform.position, Quaternion.identity);
-        //NetworkServer.Spawn(bulletGO);
-        //bulletGO.GetComponent<Bullet>().Init(owner, target);
     }
 
     [ClientRpc]
@@ -408,15 +474,23 @@ public class Player : NetworkBehaviour
         ChangeHealthValue(newValue);
     }
 
-    
 
 
     void Update()
     {
+        
+
+
+        if (Health == 0)
+        {
+            gameObject.SetActive(false);
+            return;
+        }
+
+        
 
         if (isOwned)
         {
-            
             _anim = GetComponent<Animator>();
             #region Movement
             //float deltaX = Input.GetAxis("Horizontal") * speed * Time.deltaTime;
@@ -432,26 +506,26 @@ public class Player : NetworkBehaviour
                 _anim.SetBool("SetSpeed", false);
             }
 
-            Vector3 max = _box.bounds.max;
-            Vector3 min = _box.bounds.min;
-            Vector2 corner1 = new Vector2(max.x, min.y - .1f);
-            Vector2 corner2 = new Vector2(min.x, min.y - .2f);
-            Collider2D hit = Physics2D.OverlapArea(corner1, corner2);
-            _grounded = true;
-            if (hit == null)
-            {
-                _grounded = false;
-            }
-            _body.gravityScale = _grounded && deltaX == 0 ? 0 : 1;
-            if (_grounded && (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.UpArrow)))
-            {
-                _body.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
-            }
-            if (_grounded && _jump)
-            {
-                _body.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
-                _jump = false;
-            }
+            //Vector3 max = _box.bounds.max;
+            //Vector3 min = _box.bounds.min;
+            //Vector2 corner1 = new Vector2(max.x, min.y - .1f);
+            //Vector2 corner2 = new Vector2(min.x, min.y - .2f);
+            //Collider2D hit = Physics2D.OverlapArea(corner1, corner2);
+            //_grounded = true;
+            //if (hit == null)
+            //{
+            //    _grounded = false;
+            //}
+            //_body.gravityScale = _grounded && deltaX == 0 ? 0 : 1;
+            //if (_grounded && (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.UpArrow)))
+            //{
+            //    _body.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
+            //}
+            //if (_grounded && _jump)
+            //{
+            //    _body.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
+            //    _jump = false;
+            //}
 
             #endregion
 
@@ -466,7 +540,6 @@ public class Player : NetworkBehaviour
 
             if (_atackCD != 0)
             {
-                Debug.Log("CD: " + _atackCD);
                 _atackCD -= Time.deltaTime;
             }
             if(_atackCD < 0)
@@ -475,7 +548,7 @@ public class Player : NetworkBehaviour
             }
 
 
-            //if (Input.GetKeyDown(KeyCode.H))
+            //if (Input.GetKeyDown(KeyCode.H) && Health >= 1)
             //{
             //    if (isServer)
             //    {
@@ -483,7 +556,7 @@ public class Player : NetworkBehaviour
             //    }
             //    else
             //    {
-            //        CmdChangeHealth(Health-1);
+            //        CmdChangeHealth(Health - 1);
             //    }
             //}
 
@@ -519,12 +592,15 @@ public class Player : NetworkBehaviour
 
 
         }
-        
 
-        for (int i = 0; i < HealthGos.Length; i++)
+
+        if (Health >= 0)
         {
-            HealthGos[i].SetActive(!(Health - 1 < i));
-        }     
+            for (int i = 0; i < HealthGos.Length; i++)
+            {
+                HealthGos[i].SetActive(!(Health - 1 < i));
+            }
+        }      
     }
 
     private void Flip()
@@ -546,7 +622,12 @@ public class Player : NetworkBehaviour
     }
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        MainMenu.Instanse.Disconect();
+        if(isOwned && collision.CompareTag("Out"))
+        {
+            CmdChangeHealth(0);
+            CmdCheckWin();
+        }
+        //MainMenu.Instanse.Disconect();
         //if(isOwned && collision.CompareTag("Out"))
         //{
         //    if (isServer)
@@ -619,11 +700,11 @@ public class Player : NetworkBehaviour
             Vector3 pos = /*Vector3.forward*/transform.position;
             if (_facingRight)
             {
-                pos.x += 6f;
+                pos.x += 10f;
             }
             else
             {
-                pos.x -= 6f;
+                pos.x -= 10f;
             }
             pos.z = 10f;
             _atackCD = 0.5f;

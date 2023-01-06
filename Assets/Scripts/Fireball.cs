@@ -8,12 +8,14 @@ public class Fireball : MonoBehaviour
 
     uint owner;
     bool inited;
+    bool hit;
     Vector3 target;
 
     public void Init(uint owner, Vector3 target)
     {
         this.owner = owner;
         this.target = target;
+        hit = false;
         inited = true;
         Debug.Log("BulletInit");
     }
@@ -22,7 +24,7 @@ public class Fireball : MonoBehaviour
     {
         if (inited)
         {
-
+            
             transform.Translate((target - transform.position).normalized /*0.04f*/ * Time.deltaTime * BulletSpeed);
 
             foreach (var item in Physics2D.OverlapCircleAll(transform.position, 0.5f))
@@ -33,8 +35,15 @@ public class Fireball : MonoBehaviour
                 {
                     if (player.netId != owner)
                     {
+                        if (hit)
+                        {
+                            break;
+                        }
                         player.CmdChangeHealth(player.Health - 1);
-                        Destroy(this.gameObject);
+                        //player.CmdCheckWin();
+                        hit = true;
+                        //Destroy(gameObject);
+                        
                         //NetworkServer.Destroy(gameObject);
                     }
                 }

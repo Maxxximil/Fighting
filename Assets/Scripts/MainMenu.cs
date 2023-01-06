@@ -15,6 +15,7 @@ public class Match
     public bool PublicMatch;
     public bool InMatch;
     public bool MatchFull;
+    public int PlayersInMatch;
 
     public List<GameObject> players = new List<GameObject>();
 
@@ -24,6 +25,7 @@ public class Match
         MatchFull = false;
         this.ID = ID;
         PublicMatch = publicMatch;
+        PlayersInMatch = 1;
         players.Add(player);
     }
 
@@ -41,6 +43,7 @@ public class MainMenu : NetworkBehaviour
     public readonly SyncList<Match> matches = new SyncList<Match>();
     public readonly SyncList<string> matcheIDs = new SyncList<string>();
     public int MaxPlayers;
+    
     private NetworkManager _networkManager;
 
     [Header("MainMenu")]
@@ -84,7 +87,12 @@ public class MainMenu : NetworkBehaviour
     private int index;
     private List<GameObject> previewCharacters = new List<GameObject>();
 
-    public GameObject Fireball;
+    [Header("Game")]
+    public GameObject LoseScreen;
+    public GameObject WinScreen;
+
+
+    //public GameObject Fireball;
 
     private void Start()
     {
@@ -504,6 +512,7 @@ public class MainMenu : NetworkBehaviour
                 {
                     if (!matches[i].InMatch && !matches[i].MatchFull)
                     {
+                        matches[i].PlayersInMatch++;
                         matches[i].players.Add(player);
                         player.GetComponent<Player>().CurrentMatch = matches[i];
                         matches[i].players[0].GetComponent<Player>().PlayerCountUpdated(matches[i].players.Count);
@@ -575,6 +584,10 @@ public class MainMenu : NetworkBehaviour
 
     public void StartGame()
     {
+        foreach(var match in matches)
+        {
+            Debug.Log("Players in Match: " + match.PlayersInMatch);
+        }
         Player.localPlayer.BeginGame();
     }
 
@@ -675,12 +688,35 @@ public class MainMenu : NetworkBehaviour
         SearchCanvas.enabled = false;
     }
 
-    public void SpawnFirebal(string matchID, Vector3 pos, uint owner, Vector3 target)
+    //public void SpawnFirebal(string matchID, Vector3 pos, uint owner, Vector3 target)
+    //{
+    //    GameObject newFireBall = Instantiate(Fireball,pos,Quaternion.identity);
+    //    NetworkServer.Spawn(newFireBall);
+    //    newFireBall.GetComponent<NetworkMatch>().matchId = matchID.ToGuid();
+    //    newFireBall.GetComponent<Bullet>().Init(owner, target);
+    //}
+
+    public void LoseGame()
     {
-        GameObject newFireBall = Instantiate(Fireball,pos,Quaternion.identity);
-        NetworkServer.Spawn(newFireBall);
-        newFireBall.GetComponent<NetworkMatch>().matchId = matchID.ToGuid();
-        newFireBall.GetComponent<Bullet>().Init(owner, target);
+        LoseScreen.SetActive(true);
+        //Player.localPlayer.gameObject.SetActive(false);
+    }
+
+    public void WinGame()
+    {
+        WinScreen.SetActive(true);
+
+        //Player[] players = FindObjectsOfType<Player>();
+        //for (int i = 0; i < players.Length; i++)
+        //{
+        //    //Debug.Log("Player " + i + " HP: " + players[i].Health);
+        //    if (players[i].netId == winner)
+        //    {
+        //        Debug.Log("Player " + players[i].PlayerDisplayName + " HP: " + players[i].Health);
+        //        WinScreen.SetActive(true);
+        //    }
+        //}
+
     }
 }
 
