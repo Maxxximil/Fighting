@@ -688,34 +688,15 @@ public class MainMenu : NetworkBehaviour
         SearchCanvas.enabled = false;
     }
 
-    //public void SpawnFirebal(string matchID, Vector3 pos, uint owner, Vector3 target)
-    //{
-    //    GameObject newFireBall = Instantiate(Fireball,pos,Quaternion.identity);
-    //    NetworkServer.Spawn(newFireBall);
-    //    newFireBall.GetComponent<NetworkMatch>().matchId = matchID.ToGuid();
-    //    newFireBall.GetComponent<Bullet>().Init(owner, target);
-    //}
 
     public void LoseGame()
     {
         LoseScreen.SetActive(true);
-        //Player.localPlayer.gameObject.SetActive(false);
     }
 
     public void WinGame()
     {
         WinScreen.SetActive(true);
-
-        //Player[] players = FindObjectsOfType<Player>();
-        //for (int i = 0; i < players.Length; i++)
-        //{
-        //    //Debug.Log("Player " + i + " HP: " + players[i].Health);
-        //    if (players[i].netId == winner)
-        //    {
-        //        Debug.Log("Player " + players[i].PlayerDisplayName + " HP: " + players[i].Health);
-        //        WinScreen.SetActive(true);
-        //    }
-        //}
 
     }
 }
