@@ -6,15 +6,17 @@ using Mirror;
 using TMPro;
 using UnityEngine.SceneManagement;
 using System;
+using UnityEngine.Events;
 
+//Скрипт игрока
 public class Player : NetworkBehaviour
 {
-    [SyncVar(hook = nameof(SyncHealth))][SerializeField] int _synchHealth;
-    [SyncVar] [SerializeField] private float speed = 250;
-    [SyncVar] public string matchID;
-    [SyncVar(hook = "DisplayPlayerName")] public string PlayerDisplayName;
+    [SyncVar(hook = nameof(SyncHealth))][SerializeField] int _synchHealth; //Синхронизируемая переменная здоровья
+    [SyncVar] [SerializeField] private float speed = 250;//синх переменная скорости
+    [SyncVar] public string matchID;//синх айдишник матча
+    [SyncVar(hook = "DisplayPlayerName")] public string PlayerDisplayName;//синх имя
 
-    [SyncVar] public Match CurrentMatch;
+    [SyncVar] public Match CurrentMatch;//синх текущий матч
     public GameObject PlayerLobbyUI;
     private Guid netIDGuid;
 
@@ -26,7 +28,6 @@ public class Player : NetworkBehaviour
 
     public GameObject BulletPrefab;
 
-    //public float speed = 250.0f;
     public float jumpForce = 12.0f;
     public int Health;
     public string Name;
@@ -45,65 +46,68 @@ public class Player : NetworkBehaviour
     private bool _isMoved = false;
     private float deltaX = 0;
     private float _atackCD = 0;
-
+    public int playersInLobby = 0;
+    private bool inGame = false;
     private void Awake()
     {
+        //получаем нетворкМатч и игровой интерфейс
         networkMatch = GetComponent<NetworkMatch>();
         GameUI = GameObject.FindGameObjectWithTag("GameUI");
     }
     void Start()
     {
-       
 
         _body = this.GetComponent<Rigidbody2D>();
         
         _box = GetComponent<BoxCollider2D>();
 
+        _synchHealth = Health;
+
 
         if (isLocalPlayer)
         {
-            CmdSendName(MainMenu.Instanse.DisplayName);
+            CmdSendName(MainMenu.Instanse.DisplayName);//отправляем имя
         }
     }
 
-    public override void OnStartServer()
+    public override void OnStartServer()//когда сервер запускается шифруем нетАйди и записываем в матчАйди
     {
         netIDGuid = netId.ToString().ToGuid();
         networkMatch.matchId = netIDGuid;
     }
 
-    public override void OnStartClient()
+    public override void OnStartClient()//когда клиент запускается
     {
-        if (isLocalPlayer)
+        if (isLocalPlayer)//если локальный игрок
         {
-            localPlayer = this;
+            localPlayer = this;//Ставим локального игрока
         }
         else
         {
-            PlayerLobbyUI = MainMenu.Instanse.SpawnPlayerUIPrefab(this);
+            PlayerLobbyUI = MainMenu.Instanse.SpawnPlayerUIPrefab(this);//Иначе создать имя игрока в лобби
         }
     }
 
     public override void OnStopClient()
     {
-        ClientDisconnect();
+        ClientDisconnect();//дисконект клиента
     }
 
     public override void OnStopServer()
     {
-        ServerDisconnect();
+        ServerDisconnect();//дисконект сервера
     }
 
     [Command]
     void CmdSendColor(int index)
     {
-        RpcSendColor(index);
+        RpcSendColor(index);//отправка клиентам цвет персонажа
     }
 
     [ClientRpc]
     void RpcSendColor(int index)
     {
-        switch (index)
+        switch (index)//Изменить на выбранный цвет
         {
             case 0:
                 CharacterColor.color = Color.white;
@@ -126,7 +130,7 @@ public class Player : NetworkBehaviour
     {
         if (isLocalPlayer)
         {
-            CmdSendColor(PlayerPrefs.GetInt("index"));
+            CmdSendColor(PlayerPrefs.GetInt("index"));//Если локальный игрок отправить команду на изменение цвета игрока
         }
     }
 
@@ -134,33 +138,33 @@ public class Player : NetworkBehaviour
     [Command]
     public void CmdSendName(string name)
     {
-        PlayerDisplayName = name;
+        PlayerDisplayName = name;//записываем в переменную полученное имя
     }
 
-    public void DisplayPlayerName(string name, string playerName)
+    public void DisplayPlayerName(string name, string playerName)//Вывод имени игрока над персонажем
     {
         name = playerName;
         Debug.Log("Name: " + name + " : " + playerName);
         NameDisplayText.text = playerName;
     }
 
-    public void HostGame(bool publicMatch)
+    public void HostGame(bool publicMatch)//захостить игру
     {
-        string ID = MainMenu.GetRandomId();
-        CmdHostGame(ID, publicMatch);
+        string ID = MainMenu.GetRandomId();//Получаем рандомный айди для матча
+        CmdHostGame(ID, publicMatch);//Отправляем команду на хост
     }
 
     [Command]
     public void CmdHostGame(string ID, bool publicMatch)
     {
         matchID = ID;
-        if (MainMenu.Instanse.HostGame(ID, gameObject, publicMatch))
+        if (MainMenu.Instanse.HostGame(ID, gameObject, publicMatch))//Если матч удачно создался
         {
             Debug.Log("Lobby create is successfull");
-            networkMatch.matchId = ID.ToGuid();
-            TargetHostGame(true, ID);
+            networkMatch.matchId = ID.ToGuid();//Записываем в матчАйди сгенерированный айдишник
+            TargetHostGame(true, ID);//Текущий игрок захостил игру
         }
-        else
+        else//Если нет, то нет
         {
             Debug.Log("Lobby create error");
             TargetHostGame(false, ID);
@@ -172,25 +176,25 @@ public class Player : NetworkBehaviour
     {
         matchID = ID;
         Debug.Log($"ID {matchID} == {ID}");
-        MainMenu.Instanse.HostSuccess(success, ID);
+        MainMenu.Instanse.HostSuccess(success, ID);//Актиация холста хоста
     }
 
     public void JoinGame(string inputID)
     {
-        CmdJoinGame(inputID);
+        CmdJoinGame(inputID);//Комманда на присоединение игрока по айди
     }
 
     [Command]
     public void CmdJoinGame(string ID)
     {
         matchID = ID;
-        if (MainMenu.Instanse.JoinGame(ID, gameObject))
+        if (MainMenu.Instanse.JoinGame(ID, gameObject))//Проверка на удачное подключение
         {
             Debug.Log("Join to lobby is successfull");
-            networkMatch.matchId = ID.ToGuid();
-            TargetJoinGame(true, ID);
+            networkMatch.matchId = ID.ToGuid();//Записываем в совй матчАйди айди матча хоста
+            TargetJoinGame(true, ID);//Вызываем на клиенте присоединение
         }
-        else
+        else//Не удачное подключение
         {
             Debug.Log("Join to lobby error");
             TargetJoinGame(false, ID);
@@ -202,31 +206,31 @@ public class Player : NetworkBehaviour
     {
         matchID = ID;
         Debug.Log($"ID {matchID} == {ID}");
-        MainMenu.Instanse.JoinSuccess(success, ID);
+        MainMenu.Instanse.JoinSuccess(success, ID);//Активация холста клиента
     }
 
     public void DisconnectGame()
     {
-        CmdDisconnectGame();
+        CmdDisconnectGame();//Отправка команды на дисконект
     }
 
     [Command]
     public void CmdDisconnectGame()
     {
-        ServerDisconnect();
+        ServerDisconnect();//Отключаем сервер
     }
 
     void ServerDisconnect()
     {
-        MainMenu.Instanse.PlayerDisconnected(gameObject, matchID);
-        RpcDisconnectGame();
+        MainMenu.Instanse.PlayerDisconnected(gameObject, matchID);//убираем всех игроков по матч айди
+        RpcDisconnectGame();//Отправляем всем клиентам дисконект
         networkMatch.matchId = netIDGuid;
     }
 
     [ClientRpc]
     void RpcDisconnectGame()
     {
-        ClientDisconnect();
+        ClientDisconnect();//Каждый клиент дисконнектится
     }
 
     void ClientDisconnect()
@@ -235,35 +239,35 @@ public class Player : NetworkBehaviour
         {
             if (!isServer)
             {
-                Destroy(PlayerLobbyUI);
+                Destroy(PlayerLobbyUI);//Если не сервер уничтожить интерфейс игрока в лобби
             }
             else
             {
-                PlayerLobbyUI.SetActive(false);
+                PlayerLobbyUI.SetActive(false);//Иначе, деактивировать
             }
         }
     }
 
-    public void SearchGame()
+    public void SearchGame()//Поиск игры
     {
-        CmdSearchGame();
+        CmdSearchGame();//Комманда поиска
     }
 
     [Command]
     void CmdSearchGame()
     {
-        if(MainMenu.Instanse.SearchGame(gameObject,out matchID))
+        if(MainMenu.Instanse.SearchGame(gameObject,out matchID))//Если по айди есть матч
         {
-            Debug.Log("Game is finding");
-            networkMatch.matchId = matchID.ToGuid();
-            TargetSearchGame(true, matchID);
+            Debug.Log("Game is finding");//игра найдена
+            networkMatch.matchId = matchID.ToGuid();//записываем матчАйди
+            TargetSearchGame(true, matchID);//Передаем клиенту что матч найден с таким айди
 
             if(isServer&&PlayerLobbyUI != null)
             {
                 PlayerLobbyUI.SetActive(true);
             }
         }
-        else
+        else//Иначе ошибка
         {
             Debug.Log("Game found not success");
             TargetSearchGame(false, matchID);
@@ -277,17 +281,17 @@ public class Player : NetworkBehaviour
     {
         matchID = ID;
         Debug.Log("ID: " + matchID + "==" + ID + " | " + success);
-        MainMenu.Instanse.SearchGameSuccess(success, ID);
+        MainMenu.Instanse.SearchGameSuccess(success, ID);//Останавливаем поиск и подключаемся
     }
 
     [Server]
     public void PlayerCountUpdated(int playerCount)
     {
-        TargetPlayerCountUpdated(playerCount);
+        TargetPlayerCountUpdated(playerCount);//На сервере обновляем количество игроков
     }
 
     [TargetRpc]
-    void TargetPlayerCountUpdated(int playerCount)
+    void TargetPlayerCountUpdated(int playerCount)//На клиенте проверям количество подкюченных игроков и если больше 1 активируем кнопку
     {
         if (playerCount > 1)
         {
@@ -301,19 +305,19 @@ public class Player : NetworkBehaviour
 
     public void BeginGame()
     {
-        CmdBeginGame();
+        CmdBeginGame();//Команда начала игры
     }
 
     [Command]
     public void CmdBeginGame()
     {
-        MainMenu.Instanse.BeginGame(matchID);
+        MainMenu.Instanse.BeginGame(matchID);//Запускаем игру
         Debug.Log("Game started");
     }
 
     public void StartGame()
     {
-        TargetBeginGame();
+        TargetBeginGame();//Вызываем на клиенте  старт игры
     }
 
     [TargetRpc]
@@ -321,109 +325,134 @@ public class Player : NetworkBehaviour
     {
         Debug.Log($"ID {matchID} | Start");
 
-        Player[] players = FindObjectsOfType<Player>();
+        Player[] players = FindObjectsOfType<Player>();//Получаем всех игроков и переносим их в донт дестрой он лоад
         for(int i = 0; i < players.Length; i++)
         {
             DontDestroyOnLoad(players[i]);
         }
 
-        SendColor();
-        GameUI.GetComponent<Canvas>().enabled = true;
-        MainMenu.Instanse.InGame = true;
+        SendColor();//Отправляем цвет персонажа
+        GameUI.GetComponent<Canvas>().enabled = true;//Активируем игровой холст
+        MainMenu.Instanse.InGame = true;//Меняем состояние на "в игре"
         transform.localScale = new Vector3(2, 2, 2);
-        SceneManager.LoadScene("Game", LoadSceneMode.Additive);
-        _facingRight = true;
-        _body.simulated = true;
-
+        SceneManager.LoadScene("Game", LoadSceneMode.Additive);//Загружаем сцену
+        _facingRight = true;//Поворачиваемся направо
+        _body.simulated = true;//Активируем ригидбади
+        inGame = true;//Переъодим в состояние "в игре"
     }
 
 
-    private void SyncHealth(int oldValue, int newValue)
+    private void SyncHealth(int oldValue, int newValue)//синхронизация здоровья
     {
         Health = newValue;
     }
 
-    
+    [Command]
+    public void CmdChangeHealth(int newValue)
+    {
+        ChangeHealthValue(newValue);//Изменить ХП
+    }
 
     [Server]
-    public void ChangeHealthValue(int newValue)
+    public void ChangeHealthValue(int newValue)//Изменить здоровье на новое значение
     {
         _synchHealth = newValue;
+        Debug.Log("New HP: " + _synchHealth);
 
-        if (_synchHealth <= 0)
+        if (_synchHealth <= 0)//Если ХП меньше или равно 0 то вызвать проигрыш у игрока
         {
-            UIController.Instance.LoseScreenEnable();
-            NetworkServer.Destroy(gameObject);
+            Debug.Log("0 hp");
+            TargetLoseGame();
+
         }
     }
 
-    [Server]
-    public void SpawnBullet(uint owner, Vector3 target)
+    [TargetRpc]
+    void TargetLoseGame()
     {
-        Debug.Log("SpawnBullet");
-        GameObject bulletGO = Instantiate(BulletPrefab, transform.position, Quaternion.identity);
-        NetworkServer.Spawn(bulletGO);
-        bulletGO.GetComponent<Bullet>().Init(owner, target);
+        MainMenu.Instanse.LoseGame();//Активировать холст проигрыша
     }
 
-    //[Server]
-    //public void OutOfMap()
-    //{
-    //    NetworkServer.Destroy(gameObject);
-    //}
+    [Server]
+    void CheckWin()//Проверяем на победу
+    {
+        Player[] players = FindObjectsOfType<Player>();//получаем всех игроков
+        playersInLobby = players.Length;
+        for (int i = 0; i < players.Length; i++)//У каждого игрока смотрим сколько ХП
+        {
+            if (players[i]._synchHealth == 0)//Если у кого-то 0
+            {
+                playersInLobby--;//Убираем игрока из списка
+            }
+            Debug.Log("Player " + i + " HP: " + players[i]._synchHealth);
+        }
+        Debug.Log("Players in Loby: " + playersInLobby);
+        if (playersInLobby == 1)//Если остался один игрок
+        {
+            for (int i = 0; i < players.Length; i++)
+            {
+
+                if (players[i]._synchHealth != 0)//И его ХП не равно 0
+                {
+                    Debug.Log("Winner player number " + i);
+
+                    //RpcWinGame(players[i].netId);
+                    //MainMenu.Instanse.WinGame();
+                    NetworkIdentity playerIdentity = players[i].GetComponent<NetworkIdentity>();//Получаем его айди
+                    TargetWinGame(playerIdentity.connectionToClient);//и отправляем победу
+                }
+            }
+        }
+    }
+
+    [Command]
+    public void CmdCheckWin()
+    {
+        CheckWin();//Вызвать проверку победы
+    }
 
 
-    //[Command]
-    //public void CmdOutOfMap()
-    //{
-    //    OutOfMap();
-    //}
+    [TargetRpc]
+    void TargetWinGame(NetworkConnection target)
+    {
+        MainMenu.Instanse.WinGame();//Вызвать холст победы для игрока по айди
+    }
+
+  
 
     [Command]
     public void CmdSpawnBullet(uint owner, Vector3 target)
     {
-        Debug.Log("CmdSpawnBullet");
-
-        RpcSpawnBullet(owner, target);
-        //MainMenu.Instanse.SpawnFirebal(matchID,transform.position,owner,target);
-
-        //SpawnBullet(owner, target);
-        //GameObject bulletGO = Instantiate(BulletPrefab, transform.position, Quaternion.identity);
-        //NetworkServer.Spawn(bulletGO);
-        //bulletGO.GetComponent<Bullet>().Init(owner, target);
+        RpcSpawnBullet(owner, target);//отправить клиентам запрос заспавнить фаербол
     }
 
     [ClientRpc]
     public void RpcSpawnBullet(uint owner, Vector3 target)
     {
-        GameObject bulletGO = Instantiate(BulletPrefab, transform.position, Quaternion.identity);
-        //NetworkServer.Spawn(bulletGO);
-        bulletGO.GetComponent<Fireball>().Init(owner, target);
+        GameObject bulletGO = Instantiate(BulletPrefab, transform.position, Quaternion.identity);//Спав фаербола
+        bulletGO.GetComponent<Fireball>().Init(owner, target);//Инициализация фаербола
     }
 
-
-    [Command]
-    public void CmdChangeHealth(int newValue)
-    {
-        ChangeHealthValue(newValue);
-    }
 
     
 
 
+
     void Update()
     {
-
-        if (isOwned)
+        if (Health == 0)//если ХП равен 0 неактивен и прекращаем метод Update
         {
-            
-            _anim = GetComponent<Animator>();
-            #region Movement
-            //float deltaX = Input.GetAxis("Horizontal") * speed * Time.deltaTime;
-            Vector2 movement = new Vector2(deltaX, 0);
-            transform.Translate(movement);
+            gameObject.SetActive(false);
+            return;
+        }       
 
-            if (Mathf.Abs(deltaX) > 0)
+        if (isOwned)//Если есть права на объект
+        {
+            _anim = GetComponent<Animator>();//получаем аниматор
+            Vector2 movement = new Vector2(deltaX, 0);
+            transform.Translate(movement);//перемещаемся
+
+            if (Mathf.Abs(deltaX) > 0)//Меняем аниматор
             {
                 _anim.SetBool("SetSpeed", true);
             }
@@ -432,29 +461,7 @@ public class Player : NetworkBehaviour
                 _anim.SetBool("SetSpeed", false);
             }
 
-            Vector3 max = _box.bounds.max;
-            Vector3 min = _box.bounds.min;
-            Vector2 corner1 = new Vector2(max.x, min.y - .1f);
-            Vector2 corner2 = new Vector2(min.x, min.y - .2f);
-            Collider2D hit = Physics2D.OverlapArea(corner1, corner2);
-            _grounded = true;
-            if (hit == null)
-            {
-                _grounded = false;
-            }
-            _body.gravityScale = _grounded && deltaX == 0 ? 0 : 1;
-            if (_grounded && (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.UpArrow)))
-            {
-                _body.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
-            }
-            if (_grounded && _jump)
-            {
-                _body.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
-                _jump = false;
-            }
-
-            #endregion
-
+            //Развороты персонажа
             if (!_facingRight && deltaX > 0)
             {
                 Flip();
@@ -463,71 +470,28 @@ public class Player : NetworkBehaviour
             {
                 Flip();
             }
-
+            //КД атаки
             if (_atackCD != 0)
             {
-                Debug.Log("CD: " + _atackCD);
                 _atackCD -= Time.deltaTime;
             }
             if(_atackCD < 0)
             {
                 _atackCD = 0;
             }
-
-
-            //if (Input.GetKeyDown(KeyCode.H))
-            //{
-            //    if (isServer)
-            //    {
-            //        ChangeHealthValue(Health - 1);
-            //    }
-            //    else
-            //    {
-            //        CmdChangeHealth(Health-1);
-            //    }
-            //}
-
-            //if (Input.GetKeyDown(KeyCode.Mouse1))
-            //{
-            //    Debug.Log("Attack");
-            //    _anim.SetTrigger("Attack");
-            //    Vector3 pos = Input.mousePosition;
-            //    Debug.Log("Attack pos " + pos);
-            //    pos.z = 10f;
-            //    pos = Camera.main.ScreenToWorldPoint(pos);
-            //    Debug.Log("Attack pos after camera " + pos);
-
-            //    //CmdSpawnBullet(netId, pos);
-
-            //    //GameObject bulletGO = Instantiate(BulletPrefab, transform.position, Quaternion.identity);
-            //    //NetworkServer.Spawn(bulletGO);
-            //    //bulletGO.GetComponent<Bullet>().Init(netId, pos);
-            //    //bulletGO.GetComponent<Bullet>().Init(netId, pos);
-
-
-
-            //    if (isServer)
-            //    {
-            //        SpawnBullet(netId, pos);
-            //    }
-            //    else
-            //    {
-            //        CmdSpawnBullet(netId, pos);
-
-            //    }
-            //}
-
-
         }
-        
 
-        for (int i = 0; i < HealthGos.Length; i++)
+
+        if (Health >= 0)//Если ХП больше или равно 0
         {
-            HealthGos[i].SetActive(!(Health - 1 < i));
-        }     
+            for (int i = 0; i < HealthGos.Length; i++)
+            {
+                HealthGos[i].SetActive(!(Health - 1 < i));//Девактивируем ХП бары
+            }
+        }      
     }
 
-    private void Flip()
+    private void Flip()//Разворот персонажа
     {
         if (hasAuthority)
         {
@@ -544,29 +508,19 @@ public class Player : NetworkBehaviour
             
         }
     }
-    private void OnTriggerEnter2D(Collider2D collision)
+    private void OnTriggerEnter2D(Collider2D collision)//Проигрыш при падении
     {
-        MainMenu.Instanse.Disconect();
-        //if(isOwned && collision.CompareTag("Out"))
-        //{
-        //    if (isServer)
-        //    {
-        //        OutOfMap();
-        //    }
-        //    else
-        //    {
-        //        CmdOutOfMap();
-        //    }
-        //}
+        if(isOwned && collision.CompareTag("Out"))
+        {
+            CmdChangeHealth(0);
+            CmdCheckWin();
+        }
     }
 
-    public void Jump()
-    {
-        //Debug.Log("Button");
-        
+    public void Jump()//прыжок
+    {       
         if (isOwned)
         {
-            //Debug.Log("Jump");
             Vector3 max = _box.bounds.max;
             Vector3 min = _box.bounds.min;
             Vector2 corner1 = new Vector2(max.x, min.y - .1f);
@@ -584,23 +538,7 @@ public class Player : NetworkBehaviour
         }
     }
 
-    public void Left()
-    {
-        float deltaX = -10 * speed * Time.deltaTime;
-        Vector2 movement = new Vector2(deltaX, 0);
-        transform.Translate(movement);
-        _isMoved = true;
-    }
-
-    public void Right()
-    {
-        float deltaX = 10 * speed * Time.deltaTime;
-        Vector2 movement = new Vector2(deltaX, 0);
-        transform.Translate(movement);
-        _isMoved = true;
-    }
-
-    public void Move(float move)
+    public void Move(float move)// передвижение
     {
         if (isOwned)
         {
@@ -608,7 +546,7 @@ public class Player : NetworkBehaviour
         }
     }
 
-    public void Atack()
+    public void Atack()//Атака
     {
         if (isOwned && _atackCD == 0)
         {
@@ -619,11 +557,11 @@ public class Player : NetworkBehaviour
             Vector3 pos = /*Vector3.forward*/transform.position;
             if (_facingRight)
             {
-                pos.x += 6f;
+                pos.x += 7f;
             }
             else
             {
-                pos.x -= 6f;
+                pos.x -= 7f;
             }
             pos.z = 10f;
             _atackCD = 0.5f;
