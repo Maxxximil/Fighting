@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+//Точки спавна
 public class SpawnPoints : MonoBehaviour
 {
     private void Awake()

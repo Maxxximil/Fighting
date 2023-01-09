@@ -9,17 +9,17 @@ using System.Security.Cryptography;
 using System.Text;
 
 [System.Serializable]
-public class Match
+public class Match//класс матча в котор хранятся
 {
-    public string ID;
-    public bool PublicMatch;
-    public bool InMatch;
-    public bool MatchFull;
-    public int PlayersInMatch;
+    public string ID;//айди
+    public bool PublicMatch;//публичный матч или нет
+    public bool InMatch;//В игре или нет
+    public bool MatchFull;//Полный ли матч
+    public int PlayersInMatch;//Сколько игроков в мачте
 
-    public List<GameObject> players = new List<GameObject>();
+    public List<GameObject> players = new List<GameObject>();//количество игроков
 
-    public Match(string ID, GameObject player, bool publicMatch)
+    public Match(string ID, GameObject player, bool publicMatch)//конструктор матча
     {
         InMatch = false;
         MatchFull = false;
@@ -92,7 +92,6 @@ public class MainMenu : NetworkBehaviour
     public GameObject WinScreen;
 
 
-    //public GameObject Fireball;
 
     private void Start()
     {
@@ -100,29 +99,29 @@ public class MainMenu : NetworkBehaviour
 
         _networkManager = FindObjectOfType<NetworkManager>();
 
-        FirstTime = PlayerPrefs.GetInt("FirstTime", 1);
-        Coins = PlayerPrefs.GetInt("Coins", Coins);
+        FirstTime = PlayerPrefs.GetInt("FirstTime", 1);//Заходили ли мы в игру до этого
+        Coins = PlayerPrefs.GetInt("Coins", Coins);//Получаем количество монет
 
 
-        if (PlayerPrefs.HasKey("index"))
+        if (PlayerPrefs.HasKey("index"))//Если есть индекс цвета, получаем его
         {
             index = PlayerPrefs.GetInt("index");
         }
 
-        foreach(var character in Characters)
+        foreach(var character in Characters)//Создаем превью скинов
         {
             GameObject previewCharacter = Instantiate(character.PreviewObj, PreviewParent);
             previewCharacter.SetActive(false);
             previewCharacters.Add(previewCharacter);
         }
 
-        if (index == PlayerPrefs.GetInt("index"))
+        if (index == PlayerPrefs.GetInt("index"))//Если индекс скина совпадает с цветом игрока, то деактивируем кнопку
         {
             ChooseButton.GetComponent<Image>().color = Color.white;
             ChooseButton.interactable = false;
             ChooseButton.GetComponentInChildren<TMP_Text>().text = "Chosen";
         }
-        else
+        else//иначе выводим стоимость и возможность купить
         {
             if (Characters[index].purchased == 0)
             {
@@ -146,12 +145,12 @@ public class MainMenu : NetworkBehaviour
             }
 
         }
-        previewCharacters[index].SetActive(true);
+        previewCharacters[index].SetActive(true);//активируем текущий скин
         NameText.text = Characters[index].Name;
-        Characters[0].purchased = 1;
+        Characters[0].purchased = 1;//Обчыный скин уже куплен
         
 
-        for(int i = 0; i < Characters.Count; i++)
+        for(int i = 0; i < Characters.Count; i++)//проверяем куплены ли скины
         {
             if (PlayerPrefs.HasKey("purchased" + i))
             {
@@ -160,12 +159,12 @@ public class MainMenu : NetworkBehaviour
         }
 
 
-        if (!PlayerPrefs.HasKey("Name"))
+        if (!PlayerPrefs.HasKey("Name"))//Если у нас нет имени выходим
         {
             return;
         }
 
-        string defaultName = PlayerPrefs.GetString("Name");
+        string defaultName = PlayerPrefs.GetString("Name");//Получаем имя, выбираем его и выводим
         NameInput.text = defaultName;
         DisplayName = defaultName;
         SetName(defaultName);
@@ -173,15 +172,15 @@ public class MainMenu : NetworkBehaviour
 
     private void Update()
     {
-        if (!InGame)
+        if (!InGame)//Если не в игре
         {
             Player[] players = FindObjectsOfType<Player>();
-            for(int i = 0; i < players.Length; i++)
+            for(int i = 0; i < players.Length; i++)//Всех персонажей уменьшаем
             {
                 players[i].gameObject.transform.localScale = Vector3.zero;
             }
 
-            if (FirstTime == 1)
+            if (FirstTime == 1)//Если зашли в первыц раз выбираем имя
             {
                 JoinInput.interactable = false;
                 for (int i = 0; i < buttons.Length; i++)
@@ -191,7 +190,7 @@ public class MainMenu : NetworkBehaviour
                 ChangeNamePanel.SetActive(true);
                 CloseButton.SetActive(false);
             }
-            else
+            else//Иначе назначаем цену за изменение имени
             {
                 SetNameButton.GetComponentInChildren<TMP_Text>().text = ChangeNameCost + "C";
                 CloseButton.SetActive(true);
@@ -205,55 +204,48 @@ public class MainMenu : NetworkBehaviour
                     SetNameButton.GetComponent<Image>().color = Color.red;
                 }
             }
-            //if (PlayerPrefs.HasKey("Name"))
-            //{
-            //    FirstTime = 0;
-            //}
             CoinsText.text = Coins + "C";
 
-            PlayerPrefs.SetInt("Coins", Coins);
+            PlayerPrefs.SetInt("Coins", Coins);//Выводим количество монет
         }
     }
 
     public void SetName(string name)
     {
-
-        //SetNameButton.interactable = true;
-
+        //При наборе проверям не совпадает ли имяс предыдщум и не пустой ли инпт филд
         if (name == DisplayName || string.IsNullOrEmpty(name))
         {
-            Debug.Log("true");
             SetNameButton.interactable = false;
         }
         else
         {
-            Debug.Log("false");
             SetNameButton.interactable = true;
         }
     }
 
     public void SaveName()
     {
-        if (FirstTime == 0)
+        //Сохраняем имя
+        if (FirstTime == 0)//если не в первый раз
         {
-            if (Coins >= ChangeNameCost)
+            if (Coins >= ChangeNameCost)//Провереям хватает ли денег
             {
-                Coins -= ChangeNameCost;
+                Coins -= ChangeNameCost;//вычитаем
                 JoinInput.interactable = false;
                 for (int i = 0; i < buttons.Length; i++)
                 {
                     buttons[i].interactable = false;
                 }
 
-                FirstTime = 0;
-
+                FirstTime = 0;//Ставим что уже не в первый раз
+                //заносим данный в префы и отключаем холст выбора персонажа
                 ChangeNamePanel.SetActive(false);
                 DisplayName = NameInput.text;
                 PlayerPrefs.SetInt("FirstTime", FirstTime);
                 PlayerPrefs.SetString("Name", DisplayName);
-                Invoke(nameof(Disconect), 1f);
+                Invoke(nameof(Disconect), 1f);//Перезаходим
             }
-            else
+            else//Не хватает денег
             {
                 JoinInput.interactable = false;
                 for (int i = 0; i < buttons.Length; i++)
@@ -264,7 +256,7 @@ public class MainMenu : NetworkBehaviour
                 ErrorText.text = "Not enough money";
             }
         }
-        else
+        else//Если в первый раз
         {
             ChangeNamePanel.SetActive(false);
             JoinInput.interactable = false;
@@ -282,14 +274,15 @@ public class MainMenu : NetworkBehaviour
         }    
     }
 
-    public void Choose()
+    public void Choose()//Выбор цвета
     {
-        if (Characters[index].purchased == 0)
+        if (Characters[index].purchased == 0)//Если не куплен
         {
-            if (Coins >= Characters[index].Cost)
+            if (Coins >= Characters[index].Cost)//и денег юольше чем стоит
             {
+                //Вычитаем деньги, сохраняем префы
                 Coins -= Characters[index].Cost;
-                Characters[index].purchased = 1;
+                Characters[index].purchased = 1;//выставляем что скин куплен
                 PlayerPrefs.SetInt("purchased" + index, Characters[index].purchased);
                 PlayerPrefs.SetInt("index", index);
                 JoinInput.interactable = false;
@@ -297,9 +290,9 @@ public class MainMenu : NetworkBehaviour
                 {
                     buttons[i].interactable = false;
                 }
-                Invoke(nameof(Disconect), 1f);
+                Invoke(nameof(Disconect), 1f);//перезаходим
             }
-            else
+            else//ошибка не хватает денег
             {
                 JoinInput.interactable = false;
                 for (int i = 0; i < buttons.Length; i++)
@@ -310,7 +303,7 @@ public class MainMenu : NetworkBehaviour
                 ErrorText.text = "Not enough money";
             }
         }
-        else
+        else// если куплен выбираем цвет и перезаходим
         {
             PlayerPrefs.SetInt("index", index);
             JoinInput.interactable = false;
@@ -323,10 +316,10 @@ public class MainMenu : NetworkBehaviour
         
     }
 
-    public void ChangeIndex(bool previous)
+    public void ChangeIndex(bool previous)//выбор скина
     {
-        previewCharacters[index].SetActive(false);
-
+        previewCharacters[index].SetActive(false);//Деактивируем выбранный скин
+        //перемещение по скинам
         if (!previous)
         {
             index = (index + 1) % previewCharacters.Count;
@@ -339,7 +332,7 @@ public class MainMenu : NetworkBehaviour
                 index += previewCharacters.Count;
             }
         }
-
+        //если выбран скин, деактивируем кнопку и меням текст на выбран
         if (index == PlayerPrefs.GetInt("index"))
         {
             ChooseButton.GetComponent<Image>().color = Color.white;
@@ -348,21 +341,21 @@ public class MainMenu : NetworkBehaviour
         }
         else
         {
-            if (Characters[index].purchased == 0)
+            if (Characters[index].purchased == 0)//если скин не куплен
             {
-                ChooseButton.interactable = true;
-                ChooseButton.GetComponentInChildren<TMP_Text>().text = Characters[index].Cost + "C";
+                ChooseButton.interactable = true;//интерактивность кнопки
+                ChooseButton.GetComponentInChildren<TMP_Text>().text = Characters[index].Cost + "C";//стоимость
 
-                if(Coins >= Characters[index].Cost)
+                if(Coins >= Characters[index].Cost)//если можно купить, цвет кнопки зеленный
                 {
                     ChooseButton.GetComponent<Image>().color = Color.green;
                 }
-                else
+                else//если нельзя красный
                 {
                     ChooseButton.GetComponent<Image>().color = Color.red;
                 }
             }
-            else
+            else//если куплен то можно выбрать
             {
                 ChooseButton.GetComponent<Image>().color = Color.white;
                 ChooseButton.interactable = true;
@@ -374,39 +367,40 @@ public class MainMenu : NetworkBehaviour
         NameText.text = Characters[index].Name;
     }
 
-    public void Disconect()
+    public void Disconect()//Отключение
     {
-        if (_networkManager.mode == NetworkManagerMode.Host)
+        if (_networkManager.mode == NetworkManagerMode.Host)//Если хост останавливаем хост
         {
             _networkManager.StopHost();
         }
-        else if(_networkManager.mode == NetworkManagerMode.ClientOnly)
+        else if(_networkManager.mode == NetworkManagerMode.ClientOnly)//если клиент останавливаем клиент
         {
             _networkManager.StopClient();
         }
     }
 
-    public void SetBeginButtonActive(bool active)
+    public void SetBeginButtonActive(bool active)//Активация кнопки начала
     {
         BeginGameButton.interactable = active;
     }
 
-    public void Host(bool publicHost)
+    public void Host(bool publicHost)//кнопка хоста игры
     {
+        //отключаем все кнопки
         JoinInput.interactable = false;
         for (int i = 0; i < buttons.Length; i++)
         {
             buttons[i].interactable = false;
         }
 
-        Player.localPlayer.HostGame(publicHost);
+        Player.localPlayer.HostGame(publicHost);//Отправляем запрос на хост
     }
 
-    public void HostSuccess(bool success, string matchID)
+    public void HostSuccess(bool success, string matchID)//при удачном хостинге
     {
         if (success)
         {
-            LobbyCanvas.enabled = true;
+            LobbyCanvas.enabled = true;//Включаем холст лобби и создаем интерфес лобби с именами
 
             if(localPlayerLobbyUI != null)
             {
@@ -414,10 +408,10 @@ public class MainMenu : NetworkBehaviour
             }
 
             localPlayerLobbyUI = SpawnPlayerUIPrefab(Player.localPlayer);
-            IDText.text = matchID;
-            BeginGameButton.interactable = true;
+            IDText.text = matchID;//выводим айди матча
+            BeginGameButton.interactable = true;//Активируем кнопку старта
         }
-        else
+        else//если неудачно выводим ошибку
         {
             ErrorPanel.SetActive(true);
             ErrorText.text = "Create lobby is fault";
@@ -425,8 +419,9 @@ public class MainMenu : NetworkBehaviour
         }
     }
 
-    public void Join()
+    public void Join()//Кнопка подключения
     {
+        //деактивируем все кнопки
         JoinInput.interactable = false;
         for (int i = 0; i < buttons.Length; i++)
         {
@@ -434,23 +429,23 @@ public class MainMenu : NetworkBehaviour
         }
 
 
-        Player.localPlayer.JoinGame(JoinInput.text.ToUpper());
+        Player.localPlayer.JoinGame(JoinInput.text.ToUpper());//Отправляем айди матча с инпутфилда
     }
 
-    public void JoinSuccess(bool success, string matchID)
+    public void JoinSuccess(bool success, string matchID)//При удачном подключении
     {
         if (success)
         {
-            LobbyCanvas.enabled = true;
+            LobbyCanvas.enabled = true;//активация холста лобби
 
             if (localPlayerLobbyUI != null)
             {
-                Destroy(localPlayerLobbyUI);
+                Destroy(localPlayerLobbyUI);//если окно лобби уже есть, удалить
             }
 
-            localPlayerLobbyUI = SpawnPlayerUIPrefab(Player.localPlayer);
-            IDText.text = matchID;
-            BeginGameButton.interactable = false;
+            localPlayerLobbyUI = SpawnPlayerUIPrefab(Player.localPlayer);//и создать новое с присоединившимся игроком
+            IDText.text = matchID;//Выводим матч айди
+            BeginGameButton.interactable = false;//Деактивируем кнопку начала
         }
         else
         {
@@ -460,9 +455,9 @@ public class MainMenu : NetworkBehaviour
         }
     }
 
-    public void Enable()
+    public void Enable()//Включение всех кнопок
     {
-        ErrorPanel.SetActive(false);
+        ErrorPanel.SetActive(false);//И выключение окна ошибки
         for(int i = 0; i < buttons.Length; i++)
         {
             buttons[i].interactable = true;
@@ -470,15 +465,15 @@ public class MainMenu : NetworkBehaviour
         JoinInput.interactable = true;
     }
 
-    public void DisconnectGame()
+    public void DisconnectGame()//дисконект от игры
     {
         if (localPlayerLobbyUI != null)
         {
-            Destroy(localPlayerLobbyUI);
+            Destroy(localPlayerLobbyUI);//Удалаяем UI, ели он есть
         }
 
-        Player.localPlayer.DisconnectGame();
-        LobbyCanvas.enabled = false;
+        Player.localPlayer.DisconnectGame();//Отключаемся
+        LobbyCanvas.enabled = false;//Отключаем холст лобби и активируем кнопки
         JoinInput.interactable = true;
         for (int i = 0; i < buttons.Length; i++)
         {
@@ -486,14 +481,14 @@ public class MainMenu : NetworkBehaviour
         }
     }
 
-    public bool HostGame(string matchID, GameObject player, bool publicMatch)
+    public bool HostGame(string matchID, GameObject player, bool publicMatch)//Хост игры
     {
-        if (!matcheIDs.Contains(matchID))
+        if (!matcheIDs.Contains(matchID))//проверяем чтобы не был занят айди
         {
-            matcheIDs.Add(matchID);
-            Match match = new Match(matchID, player, publicMatch);
-            matches.Add(match);
-            player.GetComponent<Player>().CurrentMatch = match;
+            matcheIDs.Add(matchID);//добавляем в общую базу айдишников
+            Match match = new Match(matchID, player, publicMatch);//Создаем новый матч
+            matches.Add(match);//добавляем в общий пул матчей
+            player.GetComponent<Player>().CurrentMatch = match;//Для хоста назначаем текущий матч
             return true;
         }
         else
@@ -502,21 +497,22 @@ public class MainMenu : NetworkBehaviour
         }
     }
 
-    public bool JoinGame(string matchID, GameObject player)
+    public bool JoinGame(string matchID, GameObject player)//Присоеденение к игре
     {
-        if (matcheIDs.Contains(matchID))
+        if (matcheIDs.Contains(matchID))//если в пуле айдишников есть айди по которому присоединяюсь
         {
             for(int i = 0; i < matches.Count; i++)
             {
-                if (matches[i].ID == matchID)
+                if (matches[i].ID == matchID)//Ищем по айди матчей нужный айди
                 {
-                    if (!matches[i].InMatch && !matches[i].MatchFull)
+                    if (!matches[i].InMatch && !matches[i].MatchFull)//И если не в матче и лобби не заполнено
                     {
+                        //Присоединяем игроков
                         matches[i].PlayersInMatch++;
                         matches[i].players.Add(player);
                         player.GetComponent<Player>().CurrentMatch = matches[i];
                         matches[i].players[0].GetComponent<Player>().PlayerCountUpdated(matches[i].players.Count);
-                        if (matches[i].players.Count == MaxPlayers)
+                        if (matches[i].players.Count == MaxPlayers)//Если максимум игроков достигнут, лобби заполнено
                         {
                             matches[i].MatchFull = true;
                         }
@@ -536,14 +532,14 @@ public class MainMenu : NetworkBehaviour
         }
     }
 
-    public bool SearchGame(GameObject player, out string ID)
+    public bool SearchGame(GameObject player, out string ID)//поиск игры
     {
         ID = "";
 
         for (int i = 0; i < matches.Count; i++)
         {
             Debug.Log("Check ID " + matches[i].ID + " | in game " + matches[i].InMatch + " | full lobby " + matches[i].MatchFull + " | public lobby " + matches[i].PublicMatch);
-            if (!matches[i].InMatch && !matches[i].MatchFull && matches[i].PublicMatch)
+            if (!matches[i].InMatch && !matches[i].MatchFull && matches[i].PublicMatch)//Проверяем матчи, если есть доступный присоединяемся
             {
                 if (JoinGame(matches[i].ID, player))
                 {
@@ -556,7 +552,7 @@ public class MainMenu : NetworkBehaviour
         return false;
     }
 
-    public static string GetRandomId()
+    public static string GetRandomId()//Генерация рандомного айди
     {
         string ID = string.Empty;
         for(int i = 0; i < 5; i++)
@@ -574,7 +570,7 @@ public class MainMenu : NetworkBehaviour
         return ID;
     } 
 
-    public GameObject SpawnPlayerUIPrefab(Player player)
+    public GameObject SpawnPlayerUIPrefab(Player player)//Создание имени игрока в лобби
     {
         GameObject newUIPlayer = Instantiate(UIPlayerPrefab, UILayerParent);
         newUIPlayer.GetComponent<PlayerUI>().SetPlayer(player.PlayerDisplayName);
@@ -582,7 +578,7 @@ public class MainMenu : NetworkBehaviour
         return newUIPlayer;
     }
 
-    public void StartGame()
+    public void StartGame()//Кнопка старта игры
     {
         foreach(var match in matches)
         {
@@ -591,12 +587,12 @@ public class MainMenu : NetworkBehaviour
         Player.localPlayer.BeginGame();
     }
 
-    public void SearchGame()
+    public void SearchGame()//Кнопка поиска игры
     {
         StartCoroutine(Searching());
     }
 
-    public void CancelSearchGame()
+    public void CancelSearchGame()//Отмена поиска игры
     {
         JoinInput.interactable = true;
         for (int i = 0; i < buttons.Length; i++)
@@ -607,17 +603,17 @@ public class MainMenu : NetworkBehaviour
         _searching = false;
     }
 
-    public void SearchGameSuccess(bool success, string ID)
+    public void SearchGameSuccess(bool success, string ID)//Игра найдена
     {
         if (success)
         {
-            SearchCanvas.enabled = false;
-            _searching = false;
-            JoinSuccess(success, ID);
+            SearchCanvas.enabled = false;//Отключить полотно поиска
+            _searching = false;//остановить поиск
+            JoinSuccess(success, ID);//Подключиться к игре
         }
     }
 
-    public void BeginGame(string matchID)
+    public void BeginGame(string matchID)//Для всех игроков в одном матча вызываем старт игры
     {
         for(int i = 0; i < matches.Count; i++)
         {
@@ -633,7 +629,7 @@ public class MainMenu : NetworkBehaviour
         }
     }
 
-    public void PlayerDisconnected(GameObject player, string ID)
+    public void PlayerDisconnected(GameObject player, string ID)//убираем игроков по матч айди
     {
         for (int i = 0; i < matches.Count; i++)
         {
@@ -659,20 +655,21 @@ public class MainMenu : NetworkBehaviour
         }
     }
 
-    IEnumerator Searching()
+    IEnumerator Searching()//Поиск лобби
     {
+        //отключаем кнопки
         JoinInput.interactable = false;
         for (int i = 0; i < buttons.Length; i++)
         {
             buttons[i].interactable = false;
         }
-        SearchCanvas.enabled = true;
-        _searching = true;
+        SearchCanvas.enabled = true;//холст поиска
+        _searching = true;//в поиске
 
         float searchInterval = 1;
         float currentTime = 1;
 
-        while (_searching)
+        while (_searching)//раз в секунду проводим поиск, пока не найдем или не отменим
         {
             if (currentTime > 0)
             {
@@ -689,19 +686,19 @@ public class MainMenu : NetworkBehaviour
     }
 
 
-    public void LoseGame()
+    public void LoseGame()//Вызов холста проигрыша
     {
         LoseScreen.SetActive(true);
     }
 
-    public void WinGame()
+    public void WinGame()//вызов холта выирыша
     {
         WinScreen.SetActive(true);
 
     }
 }
 
-public static class MatchExtention
+public static class MatchExtention//Guid для MatchID
 {
     public static Guid ToGuid(this string id)
     {
@@ -714,7 +711,7 @@ public static class MatchExtention
 }
 
 [System.Serializable]
-public class Character
+public class Character//Имя скина, цвет, цена
 {
     public string Name;
     public GameObject PreviewObj;
