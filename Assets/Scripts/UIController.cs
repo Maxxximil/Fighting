@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+//Контролеер для пользовательского интерфейса
 public class UIController : MonoBehaviour
 {
     public static UIController Instance;
@@ -9,33 +10,18 @@ public class UIController : MonoBehaviour
     public GameObject LoseScreen;
     public GameObject ControllButtons;
 
-   
-    public void LoseScreenEnable()
-    {
-        ControllButtons.SetActive(false);
-        LoseScreen.SetActive(true);
-    }
-
+    //кнопка прыжка
    public void JumpButton()
     {
         Player.localPlayer.Jump();
     }
 
-    public void LeftButton()
-    {
-        Player.localPlayer.Left();
-    }
-
-    public void RightButton()
-    {
-        Player.localPlayer.Right();
-    }
-
+    //передвижение
     public void MoveButton(float move)
     {
         Player.localPlayer.Move(move);
     }
-
+    //кнопка атаки
     public void AtackButton()
     {
         Player.localPlayer.Atack();
